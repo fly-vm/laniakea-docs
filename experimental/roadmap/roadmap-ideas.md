@@ -1,6 +1,5 @@
 # Phases Directory — Ideas, Conventions, and Context
 
-**Status:** Working notes / context doc.
 **Purpose:** Captures vocabulary, conventions, design decisions, and open questions that informed `phase-1-spaces.md` and that should carry forward as later phase docs get written. Not a spec; meant to be read by anyone (including future-me) picking up the roadmap rewrite.
 
 ---
@@ -87,21 +86,21 @@ If we ever write a Phase 0 doc, this is its content: the irreducible substrate e
 
 ## Frame mechanism
 
-A frame is a complete instance of synome state — every Space, every atom. The runtime can hold multiple frames simultaneously and operate against a chosen one (the "active frame").
+A frame is a complete runtime-held instance of synome state — every Space, every atom. The runtime can hold multiple frames simultaneously and operate against a chosen one (the "active frame").
 
 Operations: `fork(source, new-id)`, `switch(frame-id)`, `discard(frame-id)`, `diff(a, b)`.
 
 Lives below the synomic surface — a runtime addition, not a synart concept. From inside synart you can't tell which frame you're in.
 
-Phase 1 use case: clone-and-test isolation. Genesis bootstraps canonical → fork to shadow → run tests against shadow → discard shadow → canonical verified by structural identity.
+Phase 1 use case: development/rehearsal isolation. Noemar frame/fork tooling can be used by testonome workcells and testosynome deployments, but clean production artifacts should not mount mock bindings, fixture workcells, or shadow-promotion paths. P1 boot tests after production-shaped artifacts are assembled; later phase changes rehearse candidate sudo scripts in a testosynome before mutating production.
 
 Future use cases the same mechanism supports:
-- Sudo event safety (apply to shadow first, observe, then promote)
-- Forecasting (replay scenarios in shadow without affecting reality)
-- What-if queries (synodoxics arguments exercised in shadow before becoming endospells)
+- Sudo event safety (apply in a rehearsal/testosynome context first, observe, then apply the package to production if accepted)
+- Forecasting (replay scenarios in isolated frames without affecting reality)
+- What-if queries (synodoxics arguments exercised in isolated frames before becoming endospells)
 - Major migrations / repartitioning (double-mesh trick)
 
-Phase 1 implementation: deep copy is enough at this scale (~73 Spaces, modest atom count). Copy-on-write becomes valuable later.
+Phase 1 implementation: deep copy is enough at this scale (~92 fixed synart Spaces, plus modest constructor-made state). Copy-on-write becomes valuable later.
 
 ---
 
@@ -115,12 +114,14 @@ The Phase 1 deliverables are bounded — only what's needed for the phase to per
 
 "Lift" at this stage just means high-quality synlang. Probmesh, dense comments, formal proofs are not yet load-bearing. The bar is: the synlang you write now is the synlang the system runs on indefinitely.
 
+The Localnome ladder grows this production synlang additively. Each rung's loop body, rules, equations, and atom shapes are production-quality for the scope that rung covers; later rungs extend those bodies at their phase-invariant consumption sites without rewriting earlier work. A black-box-deferred body (real signature, opaque body) at one rung becomes a real body at a later rung; the readers around it do not change. This is the same shape as insyn/exsyn applied across Localnome rungs instead of across phases.
+
 ### Code vs data — the discriminator that prevents over-rabbit-holing
 
 - **Code → synlang.** Every rule, equation, derivation, loop body, predicate. Lifty.
 - **Data → atoms** (sudo-set or derived). Stress scenario parameters, asset stress profiles, capital allocations, governance numbers. Sudo-setting *numbers* in Phase 1 isn't duct tape — it's policy. The equations consuming them are synlang.
 
-A function whose body we don't yet know how to write isn't duct tape either, **as long as the signature is real synlang**. Declare the inputs, declare the output, leave the body deferred. The matured P1 `custodial-crypto` direction is no longer opaque: it is a stress-envelope waterfall consuming `CHAINREAD`, market-memory atoms, and attestation gates, returning per-risk-type CRR components. Exact scenario constants remain data atoms, not code.
+A function whose body we don't yet know how to write isn't duct tape either, **as long as the signature is real synlang**. Declare the inputs, declare the output, leave the body deferred. Exact scenario constants remain data atoms, not code.
 
 ### The insyn/exsyn pattern — phasing capabilities into synome
 
@@ -161,9 +162,7 @@ For doesn't-fit cases, black-box deferral (define the function signature, leave 
 
 ### Black-box deferrals — honest scaffolds, not duct tape
 
-When you don't know enough about a domain to model its internals well, define the function signature in synlang and leave the body opaque. This was the right earlier discipline for the P1 risk-form conversation: lock the `custodial-crypto` signature and do not invent a fake scalar. The current live P1 design has since matured past opacity: the body is a stress-envelope exobook waterfall over `CHAINREAD`, market-memory reducer outputs, and attestation gates. The black-box pattern remains the right tool for future risk classes whose internals are not yet understood.
-
-The discipline: **define the smallest synlang surface** that lets the layer above proceed. Defer everything else to its respective phase boundary.
+When you don't know enough about a domain to model its internals, define the function signature in synlang and leave the body opaque. The discipline: define the smallest synlang surface that lets the layer above proceed. Defer everything else to its respective phase boundary.
 
 ### Temporary-equation bodies — real-but-provisional computation
 
@@ -227,10 +226,10 @@ Lifty doesn't mean fanatical. The boundary:
 - ✅ Build the insyn/exsyn split now (the pattern itself is the lift)
 - ✅ Build the heartbeat loop body in real synlang now
 - ✅ Build constructors (`create-halobook`, etc.) as real synlang now
-- ❌ Don't model the full stress scenario library when v1 only needs one risk form
+- ❌ Don't model the full stress scenario library when P1 only needs one risk form
 - ❌ Don't build event-driven derivation when heartbeat sweep suffices
-- ❌ Don't build full multi-Generator architecture when v1 has one Generator
-- ❌ Don't activate concentration excess penalty when v1 has no caps
+- ❌ Don't build full multi-Generator architecture when P1 has one Generator
+- ❌ Don't activate concentration excess penalty when P1 has no caps
 - ❌ Don't hardcode full causal macro models when scenario atoms can reference market-memory reducer outputs
 
 The test for any deferred component: *would building it now exercise architecture we'll otherwise miss, or would it be speculative scaffolding for a phase that hasn't arrived?* If speculative, defer. If load-bearing for the phase's deliverable, build it lifty.
@@ -241,7 +240,7 @@ The test for any deferred component: *would building it now exercise architectur
 
 Each future phase doc, in order: (1) framing — what changes operationally vs sudo-only; (2) Spaces added at the phase boundary; (3) Spaces modified (new I/O edges or content); (4) new constructors / verbs; (5) new beacon classes + I/O matrix; (6) test additions to `&core.test-suite`; (7) genesis-equivalent sudo sequence for the phase boundary; (8) what carries forward unchanged (important — most substrate doesn't change at most phase boundaries); (9) deferred internals; (10) running totals.
 
-For the Phase 1 instantiation of this template and the canonical scope/carve-out lists, see [`phase-1-spaces.md`](phase-1-spaces.md) and [`v1-principles.md`](v1-principles.md).
+For the Phase 1 instantiation of this template and the canonical scope/carve-out lists, see [`phase-1-spaces.md`](phase-1-spaces.md) and [`phase-1-principles.md`](phase-1-principles.md).
 
 ---
 
@@ -250,7 +249,6 @@ For the Phase 1 instantiation of this template and the canonical scope/carve-out
 Things noted during the Phase 1 work that don't have settled answers:
 
 - **Crypto stress scenario calibration** — deferred to governance discussion when CRR values become real
-- **Shadow-test execution mechanism** — same synserv flipping pointer vs separate synserv instance pointed at shadow (Phase 1 doesn't need to settle this; pre-launch testing only needs one)
 - **Whether `&core.spells` should exist in Phase 1** as empty/unused infrastructure that exospells will populate later — currently deferred (no spells in Phase 1)
 - **Opaque-RWA risk class attestation schema** — legacy HVB-style classes (no on-chain visibility) need a richer numeric schema beyond the custodial-crypto boolean reframe; deferred, not a P1 risk class
 - **Later-phase Space-name judgment calls** — names chosen during the 2026-05-13 naming sweep but not used in P1: `&core.framework.risk.crash-oracle` (could be `&core.framework.crash-oracle` if not strictly risk), `&core.framework.prime-token-metrics` (could be registry data), and `&core.registry.cross-prime-flows` (compound id pattern is consistent but not yet reserved vocabulary)
@@ -265,4 +263,4 @@ Reasonable next steps:
 2. **`phase-2-spaces.md`** — adds formal settlement closure tasks to the daily synomic settlement cycle (in-space settlement verification, prepayment / penalty event records), plus Phase 2 test additions.
 3. **Continue through Phases 3-10** in order, each as a topology delta.
 
-(Pre-synlang ↔ synlang vocabulary mapping is in [`../roadstart/README.md`](../roadstart/README.md).)
+Local build progression now lives in [`localnome.md`](localnome.md); production teleonome delivery notes live in [`teleonomes.md`](teleonomes.md); cross-teleonome rehearsal scenarios live in [`testosynome-scenarios.md`](testosynome-scenarios.md).

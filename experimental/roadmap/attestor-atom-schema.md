@@ -1,7 +1,5 @@
 # Attestor Atom Schema — Custodial-Crypto
 
-**Status:** Resolved for the Phase 1 `custodial-crypto` risk class (updated 2026-05-17).
-
 **Scope:** Custodial-crypto borrower readiness, borrower admission, riskbook admission, and individual exobook term verification. Opaque-RWA risk classes (legacy HVB-style, no on-chain visibility) need a richer numeric attestation schema and are out of scope here.
 
 ---
@@ -100,7 +98,7 @@ If borrower admission is missing, stale, blocked, or scope-mismatched, no exoboo
 
 ## 4. Riskbook / Exobook Attestation
 
-The riskbook attestation gates shared legal / custody / credit structure for a homogeneous bundle — it does not certify every loan-level variable by implication. v1 discipline: construct riskbooks around homogeneous structural facts, then attach per-exobook attestations for variables that differ per loan. The main P1 exobook-level fact is maturity / TTM; the risk form uses certified term only after the funding transaction confirms.
+The riskbook attestation gates shared legal / custody / credit structure for a homogeneous bundle — it does not certify every loan-level variable by implication. P1 discipline: construct riskbooks around homogeneous structural facts, then attach per-exobook attestations for variables that differ per loan. The main P1 exobook-level fact is maturity / TTM; the risk form uses certified term only after the funding transaction confirms.
 
 ```metta
 ;; in &entity.halo.{halo-id}.riskbook.{rbk-id}

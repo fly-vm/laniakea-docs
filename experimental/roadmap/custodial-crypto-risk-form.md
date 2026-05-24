@@ -30,7 +30,12 @@ The capital question is: can the senior exo unit survive the stress scenarios go
            (collateral-asset-in [btc eth steth])
            (senior-denom-in [usdc usds usdt])
            (term-to-maturity <= 1y)
-           (halo-class nfat-term))))
+           (halo-class nfat-term)))
+   (variables [exobook-state attestation-gates market-memory scenario-library])
+   (equation-default black-box-deferred-ln1)
+   (equation-m2m none)
+   (equation-htm none)
+   (resolution-tier simulation))
 ```
 
 No mezzanine / equity tranche holdings in P1. Anything outside the form falls through to default-deny CRR 100%.
@@ -91,11 +96,14 @@ riskbook_default_crr(r) = max_s riskbook_loss(r, s) / total_senior_notional(r)
 
 Aggregate by shared scenario, not by summing each exobook's individual worst case — preserves correlation. Halobook aggregation is pure summation across Riskbook units; no cross-riskbook netting.
 
+Spread, rate, and liquidity-CRR are consumed per-exobook at the structbook level; only default-CRR is aggregated to riskbook level in P1.
+
 ## 6. Prime structbook consumption
 
 ```text
 matched capital   = matched_notional × default-CRR
-unmatched capital = unmatched_notional × max(default-CRR, spread/liquidity forced-loss)
+forced-loss-capital = spread-CRR + liquidity-CRR
+unmatched capital = unmatched_notional × max(default-CRR, forced-loss-capital)
                   + unmatched_notional × rate-CRR
 ```
 

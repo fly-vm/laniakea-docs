@@ -33,13 +33,14 @@ Step 7: Position capital = sum × position size
 ```
 Matched Portion   = min(Position Size, Available Structural-Demand Capacity)
 Unmatched Portion = Position Size - Matched Portion
+Forced-Loss Capital = spread-CRR + liquidity-CRR
 
 Position Capital = Matched   × default-CRR
                  + Unmatched × max(default-CRR, Forced-Loss Capital)
                  + Unmatched × rate-CRR
 ```
 
-Spread / rate / liquidity covered on the SDR-matched portion in P1 (risk form still calculates them; they become non-binding only to the extent matched). **default-CRR is always required.**
+Spread, rate, and liquidity are covered on the SDR-matched portion in P1 (risk form still calculates them; they become non-binding only to the extent matched). **default-CRR is always required.** Missing SDR allocation is treated as zero available capacity, so the position remains in `structbook` and capitalizes as fully unmatched.
 
 See [`matching.md`](matching.md) §3 for the cumulative capacity matching that determines available capacity.
 
@@ -62,6 +63,6 @@ TRRC[p]      = insynTRRC[p] + exsynTRRC[p]    ; exsyn from patch-{prime} writing
 ER[p]        = TRRC[p] / TRC[p]               ; target ≤ 0.90
 ```
 
-`TRC[p]` = Total Risk Capital held (JRC + EJRC + SRC tiers; tier mechanics deferred-out-of-P1 in the canonical, but the TRC scalar is sudo-set in `&entity.prime.{id}.root` for P1).
+`TRC[p]` = Total Risk Capital held (IJRC + EJRC + SRC tiers; tier mechanics deferred-out-of-P1 in the canonical, but the TRC scalar is governance-set in `&entity.prime.{id}.root` for P1).
 
 P1 ER emission cadence: per heartbeat, via `(prime-er $prime $value $T)` written by synserv into the primebook.

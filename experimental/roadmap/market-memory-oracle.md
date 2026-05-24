@@ -25,6 +25,34 @@ Risk forms read reducer outputs + provenance, not the processing mode.
 
 (`ticks` name retained for topology stability; content is broader than point ticks.)
 
+The market-data teleonome is operationally larger than its synart surface. Its production and test embodiments instantiate canonical workspecs from:
+
+```text
+&core.workspec.ethereum.{prod,test}
+&core.workspec.market-data-obtainer.{prod,test}
+&core.workspec.market-data-processing.{prod,test}
+&core.workspec.syngate.{prod,test}
+```
+
+Workcell split:
+
+```text
+onchain / inspace data
+  -> ethereum workcell
+  -> data-processing workcell
+
+exo / web / proprietary data
+  -> data-obtainer workcell
+  -> data-processing workcell
+
+data-processing workcell
+  -> reducer outputs + checkpoints
+  -> syngate workcell
+  -> &entity.oracle.crypto-majors.ticks
+```
+
+The synome receives reduced memory, not the raw tape. Raw and normalized archives, source credentials, replay queues, and reducer runtime state live in market-data embstate.
+
 ## 2. Reducers
 
 Versioned formulas, immutable by version. A change creates `*-v2`, never mutates `*-v1`. Same formula runs in replay (archive) and live-tail (new events) modes.
@@ -37,6 +65,20 @@ Versioned formulas, immutable by version. A change creates `*-v2`, never mutates
 ```
 
 If a new reducer version is approved, archive nodes replay history with the new formula, catch up to real time, then the same reducer continues live. Old version outputs remain verifiable historical artifacts.
+
+Historical replay and live-tail must emit the same atom shapes. This lets new live data become future historical memory and lets Localnome/testosynome scenarios replay old periods through the same risk-form interface.
+
+Every reducer batch should carry reproducibility anchors:
+
+```text
+input window
+source coverage report
+raw/archive checkpoint hash
+normalizer version hash
+reducer version hash
+output manifest hash
+data-quality report
+```
 
 ## 3. P1 output families
 
@@ -94,6 +136,33 @@ What the `custodial-crypto` risk form reads:
 (venue-status coinbase degraded $T)
 ```
 
+Minimum market-memory dimensions:
+
+```text
+subject
+metric family
+value / curve / distribution
+window
+as-of timestamp
+source set
+reducer version
+checkpoint hash
+quality status
+```
+
+Quality states:
+
+```text
+pass
+degraded
+stale
+failed
+disputed
+manual-review
+```
+
+Risk forms should pin behavior per metric. `pass` is consumed normally; `degraded` uses conservative fallback or haircut; `stale`, `failed`, and `disputed` either default-deny or use a conservative bound according to the risk-form rule.
+
 ## 4. Scenario interface
 
 Scenarios should be mostly references to reducer outputs:
@@ -113,3 +182,17 @@ Discipline: minimize free parameters; maximize references to reducer outputs; ma
 ## 5. What does NOT belong here
 
 Loan facts — collateral amount, debt outstanding, LT, liquidation bonus, maturity/TTM, borrower identity, disbursement account, collateral account, configurator whitelist. Those are exobook / `protocol-registry` / `CHAINREAD` / attestor-gated facts (see [`attestor-atom-schema.md`](attestor-atom-schema.md)).
+
+## 6. Practical P1 raw-data starting pack
+
+Do not start with all market data. Start with the raw series needed to produce the reducer outputs consumed by the P1 custodial-crypto stress-envelope form:
+
+- BTC/USD and ETH/USD spot plus liquidity;
+- stETH/ETH basis plus liquidity;
+- USDC/USD, USDS/USD, and USDT/USD peg plus liquidity;
+- BTC and ETH perp funding, open interest, and liquidations;
+- DEX pool reserves/swaps for stETH/ETH and stablecoin pools;
+- SOFR / T-bill curve;
+- source-quality and provenance checkpoints.
+
+Localnome should simulate upstream sources rather than inject only final outputs: fake remote exchange/API feeds into the data-obtainer workcell, and forked Ethereum/Sky state into the Ethereum workcell.

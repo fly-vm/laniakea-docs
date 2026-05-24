@@ -1,39 +1,40 @@
 # Grounding and Workcells
 
-**Status:** P1 substrate companion.
-**Scope:** The grounded execution model Noemar needs for Phase 1: literals, special forms, sigils, bindings, implements, implement code blobs, workcells, installer boot, and `&core.bootstrap`.
+**Scope:** The grounded execution model Noemar needs for Phase 1: literals, special forms, stdlib, speciallib, workcell-backed sigils, bindings, implements, implement code blobs, workcells, installer boot, and `&core.bootstrap`.
+
+Boundary principles for what should stay in Noemar versus move into governed libraries / telseeds live in [`noemar-synlib-telseed.md`](noemar-synlib-telseed.md). This doc pins the P1 grounded execution surface; it does not decide the later synlib or telseed package shape.
 
 This doc does not add an ongoing sigil / binding / workcell registry. P1 has one boot Space, `&core.bootstrap`, that materializes the runtime call surface and then becomes inert. Ordinary loops only use already-bound sigils. The complete P1 callable/workcell inventory lives in [`sigils-and-workcells.md`](sigils-and-workcells.md).
 
 ---
 
-## 1. Grounded callable split
+## 1. Callable split
 
-The old term `grounded atom` is too broad. For P1, split callable and evaluator surface into five cases:
+For P1, split callable and evaluator surface into five cases:
 
 | Term | Meaning | Examples |
 |---|---|---|
 | **literal** | Built-in value atom | `42`, `3.14`, `"hello"`, `true` |
 | **special form** | Evaluator-native control form | `if`, `let`, `match`, `quote` |
-| **stdlib pure** | Deterministic local function | `+`, `sha256`, `min`, `=` |
-| **native stdlib sigil** | Runtime-grounded callable with no workcell | `NOW` |
-| **workcell-backed sigil** | Grounded callable that reaches a bounded operational setup | `CHAINREAD`, `SYNGATE-READ` |
+| **stdlib** | Bundled inline pure function; substitutable by value | `+`, `SHA256`, `MIN`, `==` |
+| **speciallib** | Bundled inline non-substitutable operation; reads runtime state or mutates runtime substrate | `NOW`, `FORK`, `BIND-SIGIL` |
+| **workcell-backed sigil** | Callable that reaches a bounded operational setup through a workcell hub | `CHAINREAD`, `SYNGATE-READ` |
 
 Rule of thumb:
 
 ```text
 literals are values
 special forms govern evaluation
-stdlib pure functions compute
-native sigils read runtime-controlled context
+stdlib computes without reading or mutating hidden state
+speciallib reads runtime state or mutates runtime substrate
 workcell-backed sigils reach bounded external power
 ```
 
 Syntax convention:
 
 ```text
-lowercase / symbols = ordinary symbolic meaning and stdlib
-ALL CAPS            = native or workcell-backed sigil
+word-callable sigils = UPPERCASE
+symbolic sigils      = symbolic (`+`, `==`, `<`, etc.)
 $         = variable
 &         = Space
 numbers   = literals
@@ -47,40 +48,41 @@ $borrower
 loan-health
 42
 +
+==
 NOW
 CHAINREAD
 ```
 
 Special forms are Noemar evaluator law. A normal callable cannot implement `if` or `quote` cleanly because those forms change which arguments evaluate.
 
-Adding a new literal type changes the language; adding a new special form changes the evaluator; adding a pure stdlib function changes the library; adding a native or workcell-backed sigil changes the boot/binding surface.
+Adding a new literal type changes the language; adding a new special form changes the evaluator; adding a stdlib function changes the pure library; adding a speciallib or workcell-backed sigil changes the boot/binding surface.
 
 ---
 
-## 2. Workcell-backed sigil stack
+## 2. Sigil stack
 
-A workcell-backed sigil is not the program itself. It is the synlang-side callable name. The P1 stack is:
+A sigil is not the program itself. It is the synlang-side callable name. Inline sigils stop at the implement code blob; workcell-backed sigils continue through a workcell hub into local components.
 
 ```text
 sigil
   -> binding
     -> implement.method
       -> implement code blob
-        -> workcell hub
-          -> workcell components
+        -> [optional] workcell hub
+          -> [optional] workcell components
 ```
 
 Definitions:
 
 | Term | Meaning |
 |---|---|
-| **sigil** | Capability-bearing callable symbol in synlang. P1 native/workcell sigils use ALL CAPS. |
-| **binding** | Versioned wiring from a workcell-backed sigil to an implement method, including type, auth, determinism/effect, and verification policy. |
+| **sigil** | Callable symbol in synlang. Word-callable sigils use uppercase; symbolic sigils retain their symbols. |
+| **binding** | Versioned wiring from a sigil to an implement method, including type, auth, determinism/effect, and verification policy. |
 | **implement** | Controlled executable adapter/service Noemar can call. |
 | **implement method** | Specific callable method on an implement. |
 | **implement code blob** | Concrete source/package/blob that bootstrap materializes and verifies. |
 | **workcell hub** | Strict machine-facing service the implement calls. |
-| **workcell component** | Concrete operator-provided backing piece: node, signer, API endpoint, model endpoint, robot arm, camera, etc. |
+| **workcell component** | Concrete operator-provided backing piece: node, signer, API endpoint, model endpoint, operator UI, robot arm, camera, etc. |
 
 Example:
 
@@ -104,6 +106,10 @@ full node / archive node / RPC endpoint
   workcell components
 ```
 
+Most stdlib and all speciallib sigils have primordial bindings. They ship with the Noemar distribution and are pre-populated in the runtime binding table before `&core.bootstrap` evaluates. Bootstrap uses these primordial powers to bind P1 workcell sigils through implement code blobs and hub registration.
+
+Sigils are not scope-restricted by taxonomy. Whoever can call a sigil is determined by auth evaluated at call time against the target. The bootstrap powers are available during boot because `&core.bootstrap` temporarily has auth over runtime substrate; after successful boot that auth expires or is revoked.
+
 P1 uses one broad `CHAINREAD` sigil rather than separate chain-log or balance sigils:
 
 ```text
@@ -125,7 +131,7 @@ determinism: deterministic-at-block
 verification: block-ref + proof/provenance policy
 ```
 
-Native stdlib sigils such as `NOW` have no workcell stack. Pure stdlib functions such as `+` and `sha256` have neither binding nor workcell.
+Speciallib sigils such as `NOW` have no workcell stack. Stdlib functions such as `+` and `SHA256` have neither workcell hub nor workcell components.
 
 ---
 
@@ -142,7 +148,7 @@ P1 uses the same abstraction for grounded execution:
 | **workcell** | Bounded operational setup. |
 | **workcell spec** | Human-readable and testable requirements for operating the setup. |
 | **workcell hub** | Strict service implements call into. |
-| **workcell component** | Concrete piece the operator provides. |
+| **workcell component** | Concrete piece the operator provides: node, signer, UI, API endpoint, model endpoint, device, etc. |
 
 Ethereum read example:
 
@@ -179,6 +185,30 @@ syngate-intake-workcell
     syngate-intake-workcell-hub
 ```
 
+Human/operator input example:
+
+```text
+human-input-ui-workcell
+  spec:
+    authenticated operator session
+    prompt/response schema
+    timeout and escalation policy
+    approval/refusal recording
+    anti-replay and audit log
+    safe descriptor for current UI/version/policy hash
+
+  hub:
+    human-input-ui-workcell-hub
+
+  components:
+    operator console
+    local approval queue
+    notification channel
+    hardware presence / session guard when required
+```
+
+A human-input/UI workcell is how a teleonome embodiment asks its human operator for bounded input inside its core orchestration/agart loop. It is not an implicit free-form side channel. The embart/telart declares the prompt shape and authority boundary; the workcell owns the actual UI session, operator authentication, local audit trail, and any high-impact approval controls.
+
 P1 boundary:
 
 ```text
@@ -196,7 +226,7 @@ Noemar / bootstrap:
 
 P1 does not use signed workcell-readiness atoms. Running the installer / boot function is the operator assertion that the workcells are ready.
 
-Later phases can migrate workcell operation from humans to teleonomes and embodiments. The loop requirement surface stays stable; only readiness provenance improves.
+Later phases can migrate workcell operation from humans to teleonomes and embodiments. The loop requirement surface stays stable; only readiness provenance improves. Teleonome-local orchestration loops may bind a human-input/UI workcell even when synserv itself has no such P1 sigil.
 
 ---
 
@@ -216,7 +246,7 @@ It holds:
 - conformance test hooks;
 - boot receipts.
 
-It can perform bootstrap-only powers:
+It can perform bootstrap-time speciallib powers:
 
 ```text
 MATERIALIZE-IMPLEMENT
@@ -232,7 +262,7 @@ ENABLE-LOOP
   start a loop only after requirements pass
 ```
 
-These are not ordinary loop powers. After successful boot, `&core.bootstrap` becomes inert. Ordinary loops cannot materialize code blobs, bind sigils, or register workcell hubs; they only call already-bound sigils.
+After successful boot, `&core.bootstrap` becomes inert. Ordinary loops do not have auth to materialize code blobs, bind sigils, or register workcell hubs; they only call already-bound sigils.
 
 ---
 
@@ -275,24 +305,25 @@ boot-manifest:
     syngate-intake-workcell:
       endpoint: unix:/run/noemar/syngate-intake.sock
 
-  test-forks:
-    synome-shadow: enabled
+  test-domain:
+    testosynome: enabled
     eth-mainnet-fork: enabled
+    fixture-workcells: enabled
 ```
 
-After canonical genesis, bootstrap creates a shadow synome frame and points its bindings at fork/test workcells:
+Clean production binds only production workcells. Rehearsal/testosynome deployments use the same sigil specs but bind them to test-domain workcells:
 
 ```text
-production frame:
+production bindings:
   CHAINREAD    -> eth-mainnet-read-workcell-hub
   SYNGATE-READ -> syngate-intake-workcell-hub
 
-shadow frame:
+testosynome bindings:
   CHAINREAD    -> eth-mainnet-fork-workcell-hub
   SYNGATE-READ -> syngate-test-intake-workcell-hub
 ```
 
-The same synlang can then run against production reality or forked test reality.
+The same synlang can then run against production reality or testosynome reality without mounting mock or fixture bindings into clean production artifacts. The broader testing doctrine lives in [`testonomes-and-phase-rehearsal.md`](testonomes-and-phase-rehearsal.md).
 
 ---
 
@@ -303,14 +334,14 @@ Loops declare the grounded powers they need:
 ```text
 (loop-requires synserv-canonical
    (stdlib [core-special-forms-v1 core-stdlib-v1])
-   (native-sigils [NOW])
+   (speciallib [NOW])
    (sigils [SYNGATE-READ CHAINREAD])
    (bindings [syngate-read-v1 chainread-eth-mainnet-v1])
    (workcells [syngate-intake-workcell eth-mainnet-read-workcell])
    (tests [syngate-read-conformance-v1 chainread-conformance-v1]))
 ```
 
-Bootstrap refuses to enable a loop if its requirements are not satisfied. Once enabled, the loop can only call declared stdlib/native surface and already-bound workcell sigils through the normal evaluator.
+Bootstrap refuses to enable a loop if its requirements are not satisfied. Once enabled, the loop can only call declared stdlib/speciallib surface and already-bound workcell sigils through the normal evaluator.
 
 ---
 
@@ -318,19 +349,21 @@ Bootstrap refuses to enable a loop if its requirements are not satisfied. Once e
 
 P1 keeps the workcell-backed sigil set small. The canonical list is [`sigils-and-workcells.md`](sigils-and-workcells.md).
 
-Pure stdlib:
+Stdlib:
 
 ```text
 + - * /
-min max sum
-= < <= > >=
-sha256
+MIN MAX SUM
+== < <= > >=
+SHA256
 ```
 
-Native stdlib sigil:
+Speciallib:
 
 ```text
 NOW
+FORK SWITCH DISCARD DIFF
+MATERIALIZE-IMPLEMENT BIND-SIGIL REGISTER-WORKCELL-HUB ENABLE-LOOP
 ```
 
 Workcell-backed sigils:

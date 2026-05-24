@@ -1,16 +1,16 @@
 # P1 NFAT Atom Trace
 
-**Status:** Resolved Phase 1 atom trace (2026-05-17).
 **Scope:** One funded `nfat-term` custodial-crypto loan from constructor writes through `prime-er` emission. Scenario constants and reducer catalogs stay symbolic; the atom flow, gates, and rollup path are binding P1 shape.
 
 This is a companion to the worked NFAT example in [`phase-1-spaces.md`](phase-1-spaces.md). It does not add Spaces, verbs, or beacon classes.
 
 ## Trace discipline
 
-- Every atom below lives in the Space shown above it. Cross-Space reads happen only through known registries, cross-book duality, or the explicit P1 exceptions already in the Space spec.
+- Every atom below lives in the Space shown above it. Cross-Space reads happen only through the four sanctioned P1 mechanisms: registries, oracle subscription, cross-book duality, and SDR allocation reads.
 - Attestor atoms are boolean gates. They never supply collateral, debt, price, LTV, or CRR numbers.
 - Market facts come from `&entity.oracle.crypto-majors.ticks`; loan facts come from exobook atoms plus the `CHAINREAD` sigil.
-- Synserv may emit derived atoms as cache/output, but authority comes from deterministic re-derivation from source atoms each heartbeat.
+- Derived atoms are **frame-local scratch** within synserv's heartbeat — not persisted as a semantic commitment in P1. The trace shows them with `H` keys for clarity of derivation flow and cross-Space read addressing within a tick; this is presentation notation, not a persistence claim. Cross-Space readers in the same tick see the derivation as part of synserv's shared frame (cross-book duality is an in-tick frame boundary). For off-tick / historical inspection, replay from append-only input + rule atoms is canonical — both are persisted with epoch keys. Any caching layer (rolling window, snapshots) is a non-semantic optimization.
+- S-expressions in this trace show derivation notation. The values that readers actually consume (in-tick or via replay) are the evaluated scalars.
 - `patch-{prime}` enters only at the Prime primebook as `exsynTRRC`; it never affects the insyn NFAT trace.
 
 ## IDs used
@@ -18,7 +18,7 @@ This is a companion to the worked NFAT example in [`phase-1-spaces.md`](phase-1-
 | Item | ID |
 |---|---|
 | Halo | `spark-term` |
-| Prime | `spark` |
+| Prime | `Prime1` (given name: Spark) |
 | Halobook | `hbk-001` |
 | Riskbook | `rbk-001` |
 | Exobook / loan | `spark-term-loan-001` |
@@ -30,7 +30,7 @@ This is a companion to the worked NFAT example in [`phase-1-spaces.md`](phase-1-
 
 ## 1. Constructor and operational writes
 
-These are gate-mediated operational writes, not sudo. The constructors are run by `relay-halo-spark-term`; NFAT deployment is run by `relay-prime-spark`. The borrower readiness / Core inclusion / final admission path precedes this trace: `synops-halo-spark-term` records the proposed setup and request, `relay-core-govops` records Configurator inclusion, and `attest-data-spark-term` certifies the non-derivable legal / operational / credit claims.
+These are gate-mediated operational writes, not sudo. The constructors are run by `relay-halo-spark-term`; NFAT deployment is run by `relay-prime-Prime1`. The borrower readiness / Core inclusion / final admission path precedes this trace: `synops-halo-spark-term` records the proposed setup and request, `relay-core-govops` records Configurator inclusion, and `attest-data-spark-term` certifies the non-derivable legal / operational / credit claims.
 
 ### 1.1 Halobook
 
@@ -186,12 +186,12 @@ After the funding transaction confirms, the exobook becomes active and the certi
    (maturity-T {maturity-T})
    (halo-class nfat-term))
 (nfat-holder nfat-spark-term-001
-   (prime spark)
-   (holder-pau spark-prime-pau)
+   (prime Prime1)
+   (holder-pau prime1-pau)
    (timestamp T_fund))
 
-;; in &entity.prime.spark.root
-(prime-nfat-allocation spark nfat-spark-term-001
+;; in &entity.prime.Prime1.root
+(prime-nfat-allocation Prime1 nfat-spark-term-001
    (halo spark-term)
    (notional usd 750000)
    (timestamp T_fund))
@@ -240,14 +240,14 @@ The daily DSC SDR pipeline writes current-epoch capacity and allocation atoms. `
    (policy-ref {policy-ref}))
 
 ;; in &entity.generator.usge.sdr-auction
-(sdr-allocation spark 6 200000000 E)
+(sdr-allocation Prime1 6 200000000 E)
 
-;; in &entity.prime.spark.root
-(prime-trc spark {spark-trc} E)
-(prime-ijrc spark {spark-ijrc} E)
+;; in &entity.prime.Prime1.root
+(prime-trc Prime1 {prime1-trc} E)
+(prime-ijrc Prime1 {prime1-ijrc} E)
 
-;; in &entity.prime.spark.primebook
-(exsyn-trrc-claim spark {spark-exsyn-trrc} {T_patch})
+;; in &entity.prime.Prime1.primebook
+(exsyn-trrc-claim Prime1 {prime1-exsyn-trrc} {T_patch})
 ```
 
 If the heartbeat is inside the 13:00-16:00 UTC processing window, synserv first refreshes `&core.treasury`, refreshes the lot-age surface in `&entity.generator.usge.structural-demand`, runs Lindy SDR + the SDR policy overlay, reads Prime IJRC, runs the temporary SDR auction in `&entity.generator.usge.sdr-auction`, and writes the next/current epoch allocation atoms. Otherwise it reads the already-current epoch allocation.
@@ -365,7 +365,7 @@ The halobook reads child riskbook outputs and projects the NFAT as a Prime-side 
 
 ;; reads from &entity.halo.spark-term.halobook.hbk-001
 (nfat-unit nfat-spark-term-001 ...)
-(nfat-holder nfat-spark-term-001 (prime spark) ...)
+(nfat-holder nfat-spark-term-001 (prime Prime1) ...)
 (halobook-terms hbk-001 ...)
 ```
 
@@ -376,9 +376,9 @@ Derived output:
 (halobook-exposure hbk-001 H
    (riskbook rbk-001)
    (senior-notional-usd {senior-notional-usd})
-   (holder-prime spark))
+   (holder-prime Prime1))
 
-(nfat-prime-projection nfat-spark-term-001 spark H
+(nfat-prime-projection nfat-spark-term-001 Prime1 H
    (source-exobook spark-term-loan-001)
    (notional-usd 750000)
    (sptp-bucket 6)
@@ -398,13 +398,13 @@ The Prime structbook reads NFAT projections from all three P1 Halos and current 
 
 ```metta
 ;; reads from &entity.halo.spark-term.halobook.hbk-001
-(nfat-prime-projection nfat-spark-term-001 spark H ...)
+(nfat-prime-projection nfat-spark-term-001 Prime1 H ...)
 
 ;; reads from &entity.generator.usge.sdr-auction
-(sdr-allocation spark 6 200000000 E)
+(sdr-allocation Prime1 6 200000000 E)
 
 ;; reads from other halobooks during the same sweep
-(nfat-prime-projection {other-nfat} spark H ...)
+(nfat-prime-projection {other-nfat} Prime1 H ...)
 ```
 
 Example evaluation for the single position, assuming the same sweep finds `190000000` already matched against bucket `6+` before this NFAT:
@@ -414,22 +414,24 @@ available_capacity_6_plus = 200000000
 already_matched_6_plus    = 190000000
 remaining_capacity        = 10000000
 position_size             = 750000
+forced_loss_capital       = spread-CRR + liquidity-CRR
 
 matched_portion           = min(750000, 10000000) = 750000
 unmatched_portion         = 0
-position_capital          = matched_portion * default-crr
-                          + unmatched_portion * max(default-crr, forced-loss-capital)
-                          + unmatched_portion * rate-crr
+position_capital          = matched_portion * default-CRR
+                          + unmatched_portion * max(default-CRR, forced-loss-capital)
+                          + unmatched_portion * rate-CRR
 ```
 
 Derived output:
 
 ```metta
-;; in &entity.prime.spark.structbook
+;; in &entity.prime.Prime1.structbook
 (structbook-eligibility nfat-spark-term-001 H pass
    (sptp-bucket 6)
-   (sdr-bucket-covered true)
+   (has-sptp true)
    (sdr-allocation-present true)
+   (sdr-allocation-affects-match-only true)
    (active-sub-book structbook))
 
 (structbook-match nfat-spark-term-001 H
@@ -447,7 +449,7 @@ Derived output:
    (rate-crr {rate-crr})
    (position-capital {position-capital-usd}))
 
-(structbook-insyn-trrc spark {spark-structbook-trrc} H)
+(structbook-insyn-trrc Prime1 {prime1-structbook-trrc} H)
 ```
 
 If capacity is exhausted, `matched-notional` goes to `0`, `unmatched-notional` goes to `750000`, and the same formula emits a higher position capital. There is no route-change event.
@@ -457,28 +459,23 @@ If capacity is exhausted, `matched-notional` goes to `0`, `unmatched-notional` g
 The Prime primebook is where the insyn/exsyn split closes.
 
 ```metta
-;; reads from &entity.prime.spark.structbook
-(structbook-insyn-trrc spark {spark-structbook-trrc} H)
+;; reads from &entity.prime.Prime1.structbook
+(structbook-insyn-trrc Prime1 {prime1-structbook-trrc} H)
 
-;; reads from &entity.prime.spark.primebook
-(exsyn-trrc-claim spark {spark-exsyn-trrc} {T_patch})
+;; reads from &entity.prime.Prime1.primebook
+(exsyn-trrc-claim Prime1 {prime1-exsyn-trrc} {T_patch})
 
-;; reads from &entity.prime.spark.root
-(prime-trc spark {spark-trc} E)
+;; reads from &entity.prime.Prime1.root
+(prime-trc Prime1 {prime1-trc} E)
 ```
 
 Derived output:
 
 ```metta
-;; in &entity.prime.spark.primebook
-(prime-insyn-trrc spark {spark-structbook-trrc} H)
-(prime-trrc spark
-   (+ {spark-structbook-trrc} {spark-exsyn-trrc})
-   H)
-(prime-er spark
-   (/ (+ {spark-structbook-trrc} {spark-exsyn-trrc})
-      {spark-trc})
-   H)
+;; in &entity.prime.Prime1.primebook
+(prime-insyn-trrc Prime1 {prime1-structbook-trrc} H)
+(prime-trrc Prime1 {prime1-trrc-value} H)
+(prime-er Prime1 {prime1-er-value} H)
 ```
 
 `prime-er` is the Phase 1 deliverable. Governance consumes it externally; settlement and penalty actions remain manual in P1.
@@ -511,6 +508,6 @@ The trace pins down the end-to-end reads and writes that were the final Phase 1 
 Residual items are calibration / implementation details, not P1 topology blockers:
 
 - enumerate the exact `scope-ref` predicates for borrower admission, riskbook shared structure, and exobook term attestation;
-- choose final implementation field names for the atom shapes above if the v1 runtime wants a narrower syntax;
+- choose final implementation field names for the atom shapes above if the P1 runtime wants a narrower syntax;
 - calibrate the first approved scenario constants when CRR values become real;
 - finalize the exact market-memory reducer catalog. The mechanism is already settled in [`market-memory-oracle.md`](market-memory-oracle.md).

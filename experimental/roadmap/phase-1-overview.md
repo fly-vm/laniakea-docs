@@ -1,7 +1,6 @@
 # Phase 1 — Fronts
 
-**Status:** Orientation layer for Phase 1 — the entry point above [`phase-1-spaces.md`](phase-1-spaces.md) (the canonical Space-by-Space spec). Organized by *fronts*: units of focused attention, not topology units.
-**Last Updated:** 2026-05-17
+Orientation layer for Phase 1 — the entry point above [`phase-1-spaces.md`](phase-1-spaces.md) (the canonical Space-by-Space spec). Organized by *fronts*: units of focused attention, not topology units.
 
 ---
 
@@ -29,8 +28,9 @@ Cross-cutting things to know before touching any front, so nothing gets re-litig
 
 - **What's locked — don't relitigate.** Capital-math vocabulary, the naming convention, the 6-class beacon taxonomy. All settled. See [`phase-1-spaces.md`](phase-1-spaces.md) "Framing" and [`../roadstart/big-picture.md`](../roadstart/big-picture.md).
 - **Build it once — the lift principle.** Code → synlang, data → atoms, from day 1. No Python placeholders that get rewritten. Black-box deferrals are honest scaffolds (real signature, opaque body). See [`roadmap-ideas.md`](roadmap-ideas.md).
+- **Localnome 1 builds the real loop shape.** LN1 implements the real synserv heartbeat and ER rollup shape; the custodial-crypto risk-form body is the canonical black-box deferral, filled at LN6 without moving the read path.
 - **Fix the consumption site, migrate the provenance.** Phase-invariant consumption sites make later transitions purely additive. Never cross-space-reference-then-fix-later. See [`roadmap-ideas.md`](roadmap-ideas.md) "Phase-invariant consumption sites."
-- **What's deliberately deferred — the v1 carve-outs.** See [`v1-principles.md`](v1-principles.md) for the invariants distilled from the carve-outs. The carve-out list itself lives in [`phase-1-spaces.md`](phase-1-spaces.md).
+- **What's deliberately deferred — the P1 carve-outs.** See [`phase-1-principles.md`](phase-1-principles.md) for the invariants distilled from the carve-outs. The carve-out list itself lives in [`phase-1-spaces.md`](phase-1-spaces.md).
 - **Tempted to sudo mid-phase? You've started a new phase.** Any sudo event during Phase 1 is a phase boundary by construction.
 
 ---
@@ -60,15 +60,15 @@ Because fronts cross-cut, the same component appears through several lenses — 
 
 **Spaces it covers.** `&core.bootstrap` (one-shot bootstrap: materialize implement code blobs, bind sigils, register workcell hubs, emit boot receipts), `&core.syngate` (trust boundary), `&core.loop.synserv` (heartbeat loop body), `&core.registry.beacon` (beacon identities + cert/auth — absorbs the legacy Guardian root), `&core.registry.protocol` (global Configurator Unit refs), `&core.governance.requests` (Core Council request registry and later synodoxics handling surface), `&core.relay.govops` (Core govops relay loop + operational receipts), `&core.settlement` (DSC state), `&core.treasury` (Sky token-share facts), the grounded execution surface (sigils/bindings/implements/workcells; no ongoing registry Space). `&core.test-suite` is core substrate but counted under test-runner.
 
-**Challenges + watch out.** Getting `syngate` right — *the* trust boundary, the one inspectable point where authority lives. Pinning down the baseline grounded execution surface (literal / special form / sigil split, signatures, binding semantics, implement code blob materialization, workcell hub registration, conformance tests). There is no ongoing grounded registry to build in P1; `&core.bootstrap` is a one-shot boot Space and ordinary loops only use already-bound sigils. Risk-form equations are **not** here — they belong to Prime–Halo. See [`grounding-and-workcells.md`](grounding-and-workcells.md).
+**Challenges + watch out.** Getting `syngate` right — *the* trust boundary, the one inspectable point where authority lives. Pinning down the baseline grounded execution surface (literal / special form / stdlib / speciallib / workcell-backed split, signatures, binding semantics, implement code blob materialization, workcell hub registration, conformance tests). There is no ongoing grounded registry to build in P1; `&core.bootstrap` is a one-shot boot Space and ordinary loops only use already-bound sigils. Risk-form equations are **not** here — they belong to Prime–Halo. See [`grounding-and-workcells.md`](grounding-and-workcells.md).
 
 ### Prime–Halo — the deliverable
 
 **What it is.** Owns the Phase 1 deliverable: **real-time ER per Prime.** Everything else plugs in.
 
-**Spaces it covers.** `&core.loop.synserv` rollup body; the 7 prime entarts (`root` / `primebook` / `structbook` / `relay` / `protocol-registry`); the 3 halo entarts (`root` / `nfat-term` halo class / `custodial-crypto` risk class / `custodial-crypto.attest-data` attestor loop / `relay` / `synops` / `protocol-registry`); constructor-made `halobook` / `riskbook` / `exobook`; market-memory atoms from `&entity.oracle.crypto-majors.ticks`; attestor gates; **patch beacon + insyn/exsyn TRRC split** (`TRRC = insynTRRC + exsynTRRC`, exsyn from `patch-{prime}` into each primebook); relay/synops verbs; the NFAT instrument; rollup path `exobook → riskbook → halobook → NFAT → primebook → ER`.
+**Spaces it covers.** `&core.loop.synserv` rollup body; the 8 prime entarts (`root` / `primebook` / `structbook` / `relay` / `protocol-registry`); the 3 halo entarts (`root` / `nfat-term` halo class / `custodial-crypto` risk class / `custodial-crypto.attest-data` attestor loop / `relay` / `synops` / `protocol-registry`); constructor-made `halobook` / `riskbook` / `exobook`; market-memory atoms from `&entity.oracle.crypto-majors.ticks`; attestor gates; **patch beacon + insyn/exsyn TRRC split** (`TRRC = insynTRRC + exsynTRRC`, exsyn from `patch-{prime}` into each primebook); relay/synops verbs; the NFAT instrument; rollup path `exobook → riskbook → halobook → NFAT → primebook → ER`.
 
-**Challenges + watch out.** ER as `TRRC / TRC` emitted per heartbeat. **Dynamic auto-wiring** — a new `exobook` constructor must be immediately live in the rollup (registry, parent pointers, sweep, attestor accord, oracle subscription) with zero follow-up sudo. Patch beacon must cohere with the insyn/exsyn split. Attestation is boolean admission, not data — quantitative is all insyn; per-halo risk-class copies stand in for canonical `&core.framework.risk.forms` (which doesn't exist in P1) until propagation ships. See [`attestor-atom-schema.md`](attestor-atom-schema.md).
+**Challenges + watch out.** ER as `TRRC / TRC` emitted per heartbeat. **Dynamic auto-wiring** — a new `exobook` constructor must be immediately live in the rollup (registry, parent pointers, sweep, attestor accord, oracle subscription, and cross-book-duality projection for the holding Prime's structbook) with zero follow-up sudo. Patch beacon must cohere with the insyn/exsyn split. Attestation is boolean admission, not data — quantitative is all insyn; per-halo risk-class copies stand in for canonical `&core.framework.risk.forms` (which doesn't exist in P1) until propagation ships. See [`attestor-atom-schema.md`](attestor-atom-schema.md).
 
 ### Demand Side — a major input
 
@@ -108,7 +108,7 @@ Participant-defined, described in human/role terms near-term. Each converges to 
 
 ### Market Oracle (Crypto Majors Oracle)
 
-**What it does.** Rank-2 Oracle Entity pushing current market-state and rolling market-memory atoms for the v1 universe (BTC, ETH, stETH, USDC, USDS, USDT, USD rates, macro factors) via `market-data` beacons into its entart root. Full catalog: [`market-memory-oracle.md`](market-memory-oracle.md).
+**What it does.** Rank-2 Oracle Entity pushing current market-state and rolling market-memory atoms for the P1 universe (BTC, ETH, stETH, USDC, USDS, USDT, USD rates, macro factors) via `market-data` beacons into its entart root. Full catalog: [`market-memory-oracle.md`](market-memory-oracle.md).
 
 **Operational shape.** Each tick: push current market data and reducer outputs. Archive nodes replay raw source tapes when a reducer version changes, catch up to real time, then the same reducer continues live. Feed divergence → provider redundancy / dispute.
 
@@ -122,12 +122,12 @@ Participant-defined, described in human/role terms near-term. Each converges to 
 
 ### test-runner
 
-**What it does.** Testing practice. Runs the synart-native acceptance suite against a **shadow frame**, not canonical: genesis → fork shadow → run suite → discard shadow → production. Each front contributes its own test atoms; the "risk form" normative spec lives here (conformance tests *are* the definition of the form in P1).
+**What it does.** Testing practice. P1 uses a bootstrap rehearsal harness: after production-shaped P1 artifacts are assembled, operators create disposable **testonomes** that form a **testosynome** and exercise the same synart loop bodies, gate paths, workcell interfaces, and operator flows with test-domain keys/endpoints. Each front contributes test atoms and scenario fixtures; the "risk form" normative spec lives here (conformance tests *are* the definition of the form in P1). Full doctrine: [`testonomes-and-phase-rehearsal.md`](testonomes-and-phase-rehearsal.md).
 
-**Challenges + watch out.** Tests carry the normative "risk form" spec until a canonical Space does — load-bearing spec, not just verification. The test *machinery* is Core substrate; this front is the *practice*.
+**Challenges + watch out.** Tests carry the normative "risk form" spec until a canonical Space does — load-bearing spec, not just verification. Testing powers can exist in Noemar and in rehearsal/testosynome deployments, but clean production synart/telart/embarts should not mount mock bindings, fixture workcells, or hidden test modes.
 
 ---
 
 ## File map
 
-Full focused-mode file map: [`../roadstart/README.md`](../roadstart/README.md). Most-related to this orientation: [`phase-1-spaces.md`](phase-1-spaces.md) (canonical spec below this layer), [`grounding-and-workcells.md`](grounding-and-workcells.md) (grounded execution / workcell / bootstrap model), [`p1-nfat-atom-trace.md`](p1-nfat-atom-trace.md) (atom-level NFAT trace), [`p1-borrower-nfat-user-scenario.md`](p1-borrower-nfat-user-scenario.md) (borrower-to-ER narrative scenario), [`roadmap-ideas.md`](roadmap-ideas.md) (lift / insyn-exsyn / phase-invariant patterns), [`v1-principles.md`](v1-principles.md) (16 invariants).
+Full focused-mode file map: [`../roadstart/README.md`](../roadstart/README.md). Most-related to this orientation: [`phase-1-spaces.md`](phase-1-spaces.md) (canonical spec below this layer), [`teleonomes.md`](teleonomes.md) (production delivery specs), [`localnome.md`](localnome.md) (local build ladder), [`localnome-containers.md`](localnome-containers.md) (container / workcell isolation doctrine), [`testosynome-scenarios.md`](testosynome-scenarios.md) (rehearsal coverage), [`grounding-and-workcells.md`](grounding-and-workcells.md) (grounded execution / workcell / bootstrap model), [`testonomes-and-phase-rehearsal.md`](testonomes-and-phase-rehearsal.md) (testing / phase rehearsal doctrine), [`p1-nfat-atom-trace.md`](p1-nfat-atom-trace.md) (atom-level NFAT trace), [`p1-borrower-nfat-user-scenario.md`](p1-borrower-nfat-user-scenario.md) (borrower-to-ER narrative scenario), [`roadmap-ideas.md`](roadmap-ideas.md) (lift / insyn-exsyn / phase-invariant patterns), [`phase-1-principles.md`](phase-1-principles.md) (17 invariants).

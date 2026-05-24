@@ -1,8 +1,6 @@
-# Phase 1 — A Space Perspective (v4)
+# Phase 1 — Synart Space Perspective
 
-**Status:** Draft v4 (2026-05-17 live-state cleanup — supersedes v3 of 2026-05-15)
-**Last Updated:** 2026-05-17
-**Scope:** Phase 1 expressed in terms of synart Space topology — what Spaces exist, what each holds, what flows in and out, what's fixed vs operational.
+**Scope:** Phase 1 expressed in terms of synart Space topology — what Spaces exist, what each holds, what flows in and out, what's fixed vs operational. This includes canonical workspec Spaces because they are synart source specs shared across the synome. It does not include live telart, embart, files, daemons, credentials, or local workcell instances.
 
 ---
 
@@ -12,15 +10,18 @@
 
 P1-specific cuts (general lift / insyn-exsyn / DSC / phase-invariant patterns: [`roadmap-ideas.md`](roadmap-ideas.md); broader architecture context: [`../roadstart/big-picture.md`](../roadstart/big-picture.md)):
 
-- **All 7 Primes active**, deploying into 3 P1 Halos (`spark-term`, `grove-term`, `maple-term`).
-- **Per-entart local materialization.** Each halo carries its own halo-class + risk-class copies (attestor as sub-Space of the risk class). Each Prime, Halo, and the Generator carry their own `protocol-registry`. Local reads everywhere; no cross-entart hops in the rollup.
+- **All 8 canonical Primes active**, deploying into 3 P1 Halos (`spark-term`, `grove-term`, `maple-term`).
+- **Per-entart local materialization.** Each halo carries its own halo-class + risk-class copies (attestor as sub-Space of the risk class). Each Prime, Halo, and the Generator carry their own `protocol-registry`. The rollup's cross-Space reads use four explicit mechanisms only: registries, oracle subscription, cross-book duality, and SDR allocation reads.
 - **Halo class vs risk class.** Halo class = standard halobook terms + permitted risk classes (default policy template). Risk class = risk form + class-accordant attestor (attestor as sub-Space). All 3 halos share `nfat-term` × `custodial-crypto` but each materializes its own copies.
 - **Halobooks / riskbooks / exobooks are constructor-made** by `relay-halo-{id}`, not sudo (deals come in bursts). `relay` means external/onchain action authority plus the corresponding in-synome operational record; govops is the human/institutional operator, not the beacon stem.
 - **Attestation is boolean** with borrower / riskbook / exobook surfaces — see [`attestor-atom-schema.md`](attestor-atom-schema.md). Quantitative inputs all insyn (`CHAINREAD` + market memory); default-deny on stale/fail/missing.
 - **Cert / auth all rooted in `&core.registry.beacon`.** Guardian's cert-chain content folds in here; no standing Guardian entart Space in P1.
 - **Root holds registry + constructors only.** Operational logic lives in dedicated sub-Spaces. Universal across every entart type.
+- **Canonical workspecs live in synart.** P1 defines shared best-practice workcell/workspace specs under `&core.workspec.*`. Teleonomes copy these specs into embart workspaces that control real local workcells; local instances can diverge, but diff/parity is always against the synart source spec.
 
 This phase doc answers four questions: (1) what Spaces exist after genesis, (2) what each holds and how it updates, (3) what I/O flows between beacons, gate, and Spaces, (4) what changes operationally vs sudo-only (any sudo event = phase boundary).
+
+Derived-atom lifecycle in P1 is **frame-local with replay-canonical**. Synserv re-derives book state from input atoms each heartbeat. Derived values live only within synserv's heartbeat frame as scratch; the frame is shared in-tick across cross-Space readers, so a holding Prime's structbook sees the issuing halobook's projection in the same tick without persistence. For off-tick / historical inspection, replay from append-only input + rule atoms is the canonical mechanism — both inputs and rule changes are persisted with epoch keys, so any historical derived value is reconstructable. Any persistence layer (rolling-window cache, snapshots) is an implementation optimization sized to measured read patterns, not part of the semantic model.
 
 ---
 
@@ -34,6 +35,8 @@ General terms (sudo, gate-mediated write, DSC, market memory, phase-invariant co
 | **risk class** | Riskbook risk treatment — bundle of risk form + class-accordant attestor (attestor as sub-Space `…{risk-class-name}.attest-data`). |
 | **risk form** | Synlang equation consuming oracle market memory + `CHAINREAD` inputs, returning per-risk-type CRR components. Lives inside the risk class Space. |
 | **protocol-registry** | Per-entart chain-contract metadata (addresses + ABIs + event signatures). Each Prime, Halo, and the Generator owns its own. |
+| **cross-book duality** | A book unit viewed from issuer and holder sides. P1 NFAT issuance writes an issuer-side liability / holder atom in the halobook and a holder-side allocation atom in the Prime root; synserv writes the risk-bearing projection at the issuer, which the holding Prime's structbook reads. |
+| **workspec** | Canonical synart source spec for a workcell/workspace pattern. It is copied into embart workspaces by teleonomes; it is not the live local workspace and does not hold secrets, files, endpoints, or daemons. |
 | **constructor** | A verb that allocates new Spaces. P1 has three: `create-halobook`, `create-riskbook`, `create-exobook`. |
 | **relay** | Synops-capable beacon with external/onchain actuation authority. A relay performs or coordinates external action and writes the synome records needed for sequencing, lifecycle, accounting, and downstream derivation. |
 | **synops-beacon** | In-synome operational mutation only, with no external/mainnet actuation authority. In P1, Halo synops beacons submit Core Council requests and record in-synome borrower/book-accounting changes without giving relay arbitrary administration scope. |
@@ -53,21 +56,41 @@ General terms (sudo, gate-mediated write, DSC, market memory, phase-invariant co
 | `&core.relay.govops` | Core govops relay loop body plus operational receipt records for core-level Configurator / aBEAM actions and request handling. Does not own the request registry, does not grant sudo, and does not apply class changes inside P1. | Operational records mutate; loop body fixed |
 | `&core.settlement` | Daily synomic settlement cycle state: cadence, cut/process times, epoch-zero, current-epoch, processing markers | Operational (synserv writes epoch/processing state) |
 | `&core.treasury` | Sky treasury facts used by the P1 SDR auction and long-term external transparency: Sky-controlled addresses, Sky Prime token share by epoch, source/provenance | Operational (synserv-triggered treasury update; sudoed values for unlaunched tokens) |
-| `&core.test-suite` | Test atom definitions + (folded) shadow-only test results + test-runner loop body | Operational (shadow only) |
+| `&core.test-suite` | Test atom definitions, test-domain result schemas, and test-runner loop body | Operational in rehearsal/test-domain contexts only |
 
 **10 universal Spaces.**
 
 Core Council requests have their own consumption site from day 1: `&core.governance.requests`. P1 request handling is manual / Core-govops-operated (`relay-core-govops` reads requests and writes statuses / receipts), but later synodoxics machinery reads the same request atoms and attaches derivation, evidence, recommendation, and spell-candidate refs in place. The request intake path does not move when that later process arrives.
 
-What's deliberately *not* here vs. earlier drafts:
-- `&core.meta-topology` — archetypes for constructor validation fold into the per-halo halo class atoms (each halo class declares the shapes its constructors validate against).
-- `&core.registry.entity` — tree-walk via root sub-space registries is canonical.
-- `&core.registry.halo-class` — replaced by per-halo class copies in each halo entart, per the phase-invariant consumption-site principle.
-- `&core.registry.sigil`, `&core.registry.binding`, `&core.registry.workcell` — no ongoing P1 registries. P1 grounded execution catalogs live in the mega `.synlang` / `&core.bootstrap` boot surface and become active runtime bindings after bootstrap.
-- `&core.framework.risk.categories` (and the broader `&core.framework.*` layer) — no canonical Space in P1; per-class risk forms live in halo entarts. Canonical source + propagation mechanism arrives in a later phase additively.
-- `&core.protocol` — replaced by `&core.registry.protocol` for global protocol refs. Per-entart `protocol-registry` sub-Spaces still hold local PAU / protocol refs (each Prime, Halo, and the Generator own their own contract refs locally).
-- `&core.test-results` — folded into `&core.test-suite`.
-- `&core.loop.market-data`, `&core.loop.attest-data`, `&core.loop.relay.prime`, `&core.loop.relay.halo`, `&core.loop.synops.halo`, `&core.loop.test-runner` — per-entity instances hold their loop bodies in P1 (sudo-set, self-contained); canonical templates ship additively in a later phase, propagating into the same per-entity Spaces. Each per-entity Space remains the consumption site across phases.
+---
+
+## Canonical Workspec Spaces (sudo at genesis)
+
+Workspecs are synart source specs for workcell/workspace best practice. They define interface expectations, required artifacts, health descriptors, diff checks, canary shape, allowed test deltas, and secure-state boundaries. They do not operate workcells directly.
+
+Each workspec has a production source spec and a test source spec:
+
+```text
+canonical workspec Space
+  -> copied into teleonome embart workspace
+  -> local workspace installs / maintains / controls / validates local workcells
+```
+
+The test copy is intentionally separate. Testonomes may receive test embart workspaces and test workcells. They must not access production embart workspaces, production workcells, secure embstate, production keys, or production endpoints.
+
+| Workspec pair | Holds |
+|---|---|
+| `&core.workspec.ethereum.prod` / `&core.workspec.ethereum.test` | Ethereum read/write environment expectations, chain read provenance, receipt monitoring, signer boundaries, finality/reorg handling, and allowed testnet/fork deltas. |
+| `&core.workspec.syngate.prod` / `&core.workspec.syngate.test` | Signed envelope intake/publication, pubkey snapshots, nonce/rate-limit handling, cursor/replay behavior, rejection evidence, and test transport deltas. |
+| `&core.workspec.attestor.prod` / `&core.workspec.attestor.test` | Sensitive-document handling, attestation output shape, scope/freshness checks, audit boundaries, and fake/redacted test attestation behavior. |
+| `&core.workspec.operator-ui.prod` / `&core.workspec.operator-ui.test` | Human approval/intake surfaces, role-scoped commands, audit logs, confirmation policy, and scripted/manual test operator ceremony. |
+| `&core.workspec.testonome.prod` / `&core.workspec.testonome.test` | Fork policy, test-zone classification, scrub/replace/rebind/stamp transforms, teardown, report signing, and isolation checks. |
+| `&core.workspec.market-data-obtainer.prod` / `&core.workspec.market-data-obtainer.test` | Exchange/API/paid-feed/source-health acquisition, credential boundaries, fake remote sources, and source coverage reports. |
+| `&core.workspec.market-data-processing.prod` / `&core.workspec.market-data-processing.test` | Normalization, archive/replay/live-tail, reducer execution, checkpoint/provenance manifests, quality states, and reproducibility checks. |
+
+**14 canonical workspec Spaces.**
+
+Teleonome delivery notes live in [`teleonomes.md`](teleonomes.md). Local build phases live in [`localnome.md`](localnome.md).
 
 ---
 
@@ -114,33 +137,33 @@ Weights are recomputed every DSC epoch from latest `&core.treasury` token-share 
 
 ## Oracle Entity — sudo at genesis (×1)
 
-Phase 1 has one oracle entity: Crypto Majors Oracle for market data. (Book Attestation Oracle, an entity that existed in earlier drafts, no longer has its own entart Space — its cert chain folds into `&core.registry.beacon`, and class-accordant borrower-readiness / borrower-admission / riskbook / exobook attestation atoms land directly in their target risk class or book Spaces.)
+Phase 1 has one oracle entity: Crypto Majors Oracle for market data. Cert chains for class-accordant attestors live in `&core.registry.beacon`; borrower-readiness / borrower-admission / riskbook / exobook attestation atoms land directly in their target risk class or book Spaces.
 
 | Space | Holds |
 |---|---|
 | `&entity.oracle.crypto-majors.root` | Crypto Majors Oracle entart root — identity, auth, sub-space registry |
 | `&entity.oracle.crypto-majors.market-data` | Market-data beacon loop body |
-| `&entity.oracle.crypto-majors.ticks` | Market-memory atoms for the v1 universe (BTC, ETH, stETH, USDC, USDS, USDT, USD rates): price, basis, vol, correlation, liquidity/impact, liquidation-overhang, funding/OI, macro/rates, reducer checkpoints, data quality |
+| `&entity.oracle.crypto-majors.ticks` | Market-memory atoms for the P1 universe (BTC, ETH, stETH, USDC, USDS, USDT, USD rates): price, basis, vol, correlation, liquidity/impact, liquidation-overhang, funding/OI, macro/rates, reducer checkpoints, data quality |
 
 **3 Oracle Spaces.** Raw historical tapes are not stored in ordinary synome atoms. Archive nodes preserve raw source history; the oracle loop emits reducer outputs and provenance checkpoints into `ticks`. The same reducer formulas run in historical replay and live-tail modes, so new live data naturally becomes part of future historical memory.
 
 ---
 
-## Per Prime — sudo at genesis (×7)
+## Per Prime — sudo at genesis (×8)
 
-Phase 1 has 7 Primes — Spark, Grove, Obex, Keel, Skybase, Launch6, and one more (TBD).
+Phase 1 has 8 canonical Primes. Canonical IDs are `Prime1` through `Prime8`; given names are separate atoms. The current known mapping is `Prime1` = Spark, `Prime2` = Grove, `Prime3` = Obex, `Prime4` = Keel, `Prime5` = Skybase, `Prime6` = Launch6. `Prime7` and `Prime8` have no given names yet.
 
 | Space | Holds |
 |---|---|
-| `&entity.prime.{id}.root` | Prime entart root — identity, auth, sub-space registry, `(prime-trc {prime} {amount})` atom (TRC, sudo-set, governance-updated), per-Prime relay/operator config (allowed halos, deploy cadence, allocation strategy) |
+| `&entity.prime.{id}.root` | Prime entart root — identity, auth, sub-space registry, optional `(prime-given-name {prime} {name})`, epoch-stamped `(prime-trc {prime} {amount} {epoch})` atom, epoch-stamped `(prime-ijrc {prime} {amount} {epoch})` atom, and per-Prime relay/operator config (allowed halos, deploy cadence, allocation strategy). TRC and IJRC are governance-updated during P1 without changing topology. |
 | `&entity.prime.{id}.primebook` | Aggregates Halobook units the Prime holds via cross-book duality. Computes insynTRRC via synlang sweep across structbook. Holds `(exsyn-trrc-claim {prime} {amount} {timestamp})` atoms locally — written by the per-Prime `patch-{prime}` patch-beacon (sudoed inline at genesis). Reads TRC from root. Computes and emits `(prime-er {prime} {value} {timestamp})` real-time per heartbeat. |
 | `&entity.prime.{id}.structbook` | The active Primebook sub-book. Reads NFAT units the Prime holds across all 3 halos via cross-book duality. Reads SDR allocations from `&entity.generator.usge.sdr-auction`. Computes matched/unmatched blend per position, structbook CRR per position. |
 | `&entity.prime.{id}.relay` | `relay-prime-{id}` loop body: deploy / rollover / withdraw against the Prime's PAUs, plus allocation and transaction-confirmation records needed by the synome. Per-entity sudo-set in P1; canonical template propagation comes additively later. |
 | `&entity.prime.{id}.protocol-registry` | This Prime's PAU contract refs — Controller + ALMProxy + RateLimits addresses + ABIs + relevant event signatures |
 
-**5 Spaces × 7 Primes = 35 Spaces.**
+**5 Spaces × 8 Primes = 40 Spaces.**
 
-All 7 Primes deploy capital into NFATs from the 3 P1 Halos. The structbook is the only active Primebook sub-book in v1; other sub-books (`ascbook`, `tradingbook`, `termbook`, `hedgebook`, unmatched) are deferred — see [`../roadstart/risk-framework.md`](../roadstart/risk-framework.md) "Sub-book taxonomy + coverage matrix".
+All 8 Primes deploy capital into NFATs from the 3 P1 Halos. The structbook is the only active Primebook sub-book in P1; other sub-books (`ascbook`, `tradingbook`, `termbook`, `hedgebook`, unmatched) are deferred — see [`../roadstart/risk-framework.md`](../roadstart/risk-framework.md) "Sub-book taxonomy + coverage matrix".
 
 ---
 
@@ -212,7 +235,7 @@ These grow during operation as deals come in. All factory verbs respect halo-cla
 | `&entity.halo.{id}.riskbook.{rbk-id}` | `create-riskbook` (`relay-halo-{id}`) | Under a halobook. Bound to a risk class permitted by the halo class. Risk form imported in at creation. Riskbook-issued unit held by halobook via cross-book duality. |
 | `&entity.halo.{id}.exobook.{loan-id}` | `create-exobook` (`relay-halo-{id}`) | Per-borrower loan. Asset side: collateral references (`CHAINREAD` against borrower's collateral account) or staged PAU cash before send. Tranches: senior (static notional in USDC/USDS/USDT), junior (notional-rule = residual equity). State: lifecycle, debt outstanding, funding confirmation, maturity/TTM. Rollup-gating borrower/riskbook admission lives in the risk class/riskbook attestation surfaces. |
 
-A v1 halo with N active loans has roughly: 1–few halobooks, 1–few riskbooks, N exobooks.
+A P1 halo with N active loans has roughly: 1–few halobooks, 1–few riskbooks, N exobooks.
 
 ---
 
@@ -242,14 +265,14 @@ Exobook + exo units can be created before funds are sent. In `ready-empty`, borr
 | `synserv-canonical` | synserv | Core Council govops (singleton) | `&core.loop.synserv` |
 | `market-data-crypto-majors-{provider}` | market-data-beacon | Crypto Majors Oracle | `&entity.oracle.crypto-majors.market-data` |
 | `attest-data-{halo-id}` × 3 | attest-data-beacon | (cert + auth in `&core.registry.beacon`) | `&entity.halo.{id}.custodial-crypto.attest-data` |
-| `patch-{prime}` × 7 | patch-beacon | govops (Guardian sudo cert at genesis) | sudoed inline into `&entity.prime.{id}.primebook` |
+| `patch-{prime}` × 8 | patch-beacon | govops (Guardian sudo cert at genesis) | sudoed inline into `&entity.prime.{id}.primebook` |
 | `relay-core-govops` | relay | Core Council govops | `&core.relay.govops` |
-| `relay-prime-{id}` × 7 | relay | Prime govops | `&entity.prime.{id}.relay` |
+| `relay-prime-{id}` × 8 | relay | Prime govops | `&entity.prime.{id}.relay` |
 | `relay-halo-{id}` × 3 | relay | Halo govops | `&entity.halo.{id}.relay` |
 | `synops-halo-{id}` × 3 | synops-beacon | Halo govops | `&entity.halo.{id}.synops` |
-| `test-runner` | test | n/a | folded into `&core.test-suite` (shadow only) |
+| `test-runner` | test | n/a | folded into `&core.test-suite` (testosynome / rehearsal only) |
 
-**~27 beacon identities** registered in `&core.registry.beacon` at genesis (1 synserv + 1+ market-data + 3 attest-data + 7 patch + 1 relay-core + 7 relay-prime + 3 relay-halo + 3 synops-halo + 1 test). All loop bodies are production-quality synlang evaluated by Noemar. Per-entity Spaces hold the loop bodies in P1 (self-contained); canonical loop templates ship additively in a later phase per the phase-invariant consumption-site pattern.
+**~29 beacon identities** registered in `&core.registry.beacon` at genesis (1 synserv + 1+ market-data + 3 attest-data + 8 patch + 1 relay-core + 8 relay-prime + 3 relay-halo + 3 synops-halo + 1 test). All loop bodies are production-quality synlang evaluated by Noemar. Per-entity Spaces hold the loop bodies in P1 (self-contained); canonical loop templates ship additively in a later phase per the phase-invariant consumption-site pattern.
 
 `synserv-canonical` is registered here for identity / loop resolution, but it is not a normal operator beacon. It is the central synomic node operated by Core Council govops: beacons submit external inputs or action records through syngate; synserv sequences accepted writes, derives state, advances DSC, and publishes official outputs.
 
@@ -301,8 +324,8 @@ Patch-beacons remain the one beacon class without a regulated framework — Guar
 | `relay-core-govops` | `&core.governance.requests`, `&core.registry.protocol`, Core Council / Configurator operational queue, external tx receipts | request status atoms in `&core.governance.requests`; core-action receipt atoms in `&core.relay.govops`; external Configurator / aBEAM action records |
 | `relay-halo-{id}` | halo root config, halo class, risk class, deal queue, planned / executing / confirmed external actions | new halobook/riskbook/exobook Spaces, lifecycle atoms, queue-claim / conversion / funding confirmations, tx receipts, NFAT issuance records |
 | `relay-prime-{id}` | Prime root config, NFAT availability via cross-book duality, deploy schedule, planned / executing / confirmed external allocation actions | NFAT-holding updates in halobooks; capital allocation and tx-confirmation atoms in Prime root / relay-adjacent Spaces |
-| `synserv-canonical` | syngate intake via `(SYNGATE-READ …)`; all accepted input atoms across the entart tree; chain state via `(CHAINREAD …)`; heartbeat time via `(NOW)` | derived state atoms in book Spaces; `&core.settlement` epoch/processing atoms; `&core.treasury` refresh writes; lot-age surface / Lindy SDR / SDR auction dispatch; `(prime-er _)` atoms in primebooks |
-| `test-runner` | (shadow only) | test results within `&core.test-suite` (shadow only) |
+| `synserv-canonical` | syngate intake via `(SYNGATE-READ …)`; all accepted input atoms across the entart tree; chain state via `(CHAINREAD …)`; heartbeat time via `(NOW)` | frame-local derived values across book Spaces (visible in-tick to cross-Space readers; reconstructable off-tick by replay); persisted writes only for genuinely stateful outputs — `&core.settlement` epoch/processing atoms, `&core.treasury` refresh writes, lot-age surface / Lindy SDR / SDR auction dispatch |
+| `test-runner` | (testosynome / rehearsal only) | test results within `&core.test-suite` in the test-domain context |
 
 The pattern: input beacons (market-data, attest-data, patch) write into their target Spaces; relay beacons run external-action-coupled constructors, lifecycle transitions, and capital flows; synserv runs the synlang heartbeat that drives all derived state and emits real-time ER.
 
@@ -355,7 +378,7 @@ SYNSERV HEARTBEAT (evaluating &core.loop.synserv)
     read: structbook output → insynTRRC[prime]
         + (exsyn-trrc-claim prime _) from local primebook (written by patch-{prime}) → exsynTRRC[prime]
         = TRRC[prime]
-        read: (prime-trc prime _) atom in &entity.prime.{id}.root → TRC[prime]
+        read: latest (prime-trc prime _ epoch) atom in &entity.prime.{id}.root → TRC[prime]
     emit: (prime-er prime value T) ← every heartbeat, real-time
 
   (Genbook level deferred — cross-Prime concentration enforcement arrives at a later phase)
@@ -365,33 +388,35 @@ SYNSERV HEARTBEAT (evaluating &core.loop.synserv)
 
 ## Frame Mechanism
 
-Runtime feature for clone-and-test isolation — full mechanism in [`roadmap-ideas.md`](roadmap-ideas.md) "Frame mechanism". P1 use: genesis bootstraps canonical → fork to shadow → run test suite → discard → canonical verified by structural identity. Implementation: deep copy at P1's scale (~73 fixed Spaces); copy-on-write becomes valuable later.
+Runtime feature for local isolation — full mechanism in [`roadmap-ideas.md`](roadmap-ideas.md) "Frame mechanism". P1 may use Noemar-native frame/fork tooling inside rehearsal and development embodiments, but clean production artifacts should not mount mock bindings, fixture workcells, or shadow-promotion paths. Testing and phase rehearsal doctrine lives in [`testonomes-and-phase-rehearsal.md`](testonomes-and-phase-rehearsal.md).
 
 ---
 
 ## Test System
 
-A synart-native acceptance suite. Tests live as atoms in `&core.test-suite`; results accumulate in the same Space (shadow-only). The whole suite is sudo-written at genesis. **Tests run against a shadow frame, not canonical**, using the Frame Mechanism.
+A synart-native acceptance suite. Tests live as atoms in `&core.test-suite`; results accumulate in test-domain/rehearsal contexts, not ordinary production operation. The whole suite is sudo-written at genesis. P1 uses the suite in a bootstrap rehearsal harness: production-shaped artifacts are assembled, disposable testonomes form a testosynome, and the system exercises real loop bodies, gate paths, workcell interfaces, and operator flows with test-domain keys/endpoints.
 
-Test categories for v4:
+Full testing doctrine: [`testonomes-and-phase-rehearsal.md`](testonomes-and-phase-rehearsal.md).
+
+Test categories:
 
 | Category | Verifies |
 |---|---|
-| **Topology** | All 73 fixed Spaces exist; sub-entart and sub-space registries point correctly; per-entart root contents present (TRC atom in prime roots, etc.) |
-| **Bootstrap / grounding** | `&core.bootstrap` content present; literal / special form / stdlib / sigil classification; binding resolution; implement code blob hash checks; workcell hub registration; shadow-frame binding to test workcells |
+| **Topology** | All 92 fixed Spaces exist; sub-entart and sub-space registries point correctly; per-entart root contents present (TRC and IJRC atoms in prime roots, etc.); canonical workspec pairs are present. |
+| **Bootstrap / grounding** | `&core.bootstrap` content present; literal / special form / stdlib / speciallib / workcell-backed classification; binding resolution; implement code blob hash checks; workcell hub registration; test-domain binding to test workcells |
 | **Auth atoms** | Each operational verb has correctly-placed auth atoms in `&core.registry.beacon`; counts match expected per Prime / Halo |
-| **Beacon registry** | All ~27 identities present, status active, class atoms set, cert chains rooted |
+| **Beacon registry** | All ~29 identities present, status active, class atoms set, cert chains rooted |
 | **Halo class / risk class** | All 3 halo entarts carry their `nfat-term` halo class and `custodial-crypto` risk class with the right shape; the attestor sub-Space is present and accordant |
 | **Constructors** | `create-halobook` / `create-riskbook` / `create-exobook` happy-path + auth-failure + duplicate (idempotency); risk-form import on `create-riskbook` |
 | **Attestation** | borrower readiness before inclusion, final borrower admission, `post-riskbook-attestation`, and `post-exobook-attestation` happy paths; rollup behavior with stale / fail / missing attestations (borrower, riskbook, or exobook excluded — default-deny) |
 | **ER computation** | synserv-internal CRR + insynTRRC + exsynTRRC + TRC → real-time ER emission against synthetic positions |
 | **Oracle inputs** | market-memory reducer outputs and current-state atoms (market-data-beacon); `(exsyn-trrc-claim _)` consumption from per-Prime primebook (patch-beacon write path) |
 | **Settlement / SDR pipeline** | DSC epoch advance from mock clock; 13:00-16:00 processing idempotency; treasury refresh before allocation; lot-age surface refresh; Lindy SDR and policy-overlay outputs; `sdr-allocation` atoms stamped with next/current epoch as expected |
-| **Relay / synops flows** | `register-borrower-setup`; `request-borrower-inclusion` and `request-class-modification` into `&core.governance.requests`; Core govops request status / Configurator action records; NFAT deploy / rollover / withdraw cycle; halo book setup; `assign-book-assets`; funding confirmation / tx receipt handling |
+| **Relay / synops flows** | `register-borrower-setup`; `request-borrower-inclusion` and `request-class-modification` into `&core.governance.requests`; Core govops request status / Configurator action records; NFAT deploy / rollover / withdraw cycle; halo book setup; `assign-book-assets`; funding confirmation / tx receipt handling; human-input/UI workcell prompt and approval receipts where operator ceremony is part of the flow |
 | **Gate-level** | bad sig rejected; replay rejected; rate-limit enforced; unknown verb / identity rejected |
 | **Risk form conformance** | All 3 halos' `custodial-crypto` risk forms produce identical outputs on the same inputs (binds the per-class copies until canonical propagation ships) |
 
-Genesis → shadow fork → test → discard shadow → production start.
+P1 bootstrap sequence: assemble production-shaped P1 artifacts -> fork testonomes through testonome workcells -> run testosynome rehearsal -> if good, start P1 activity. Later phase changes invert the order: fork testonomes from live production first, rehearse the candidate sudo script in the testosynome, then apply the package to production, run read-only prod unit tests, pause ordinary economic action, and run prod canaries before opening the new phase.
 
 ---
 
@@ -402,35 +427,37 @@ After Phase 0 substrate is in place, Phase 1 genesis is a sequence of sudo write
 1. Allocate the 10 universal Spaces (`&core.bootstrap`, `&core.syngate`, `&core.loop.synserv`, `&core.registry.beacon`, `&core.registry.protocol`, `&core.governance.requests`, `&core.relay.govops`, `&core.settlement`, `&core.treasury`, `&core.test-suite`).
 2. Allocate the 4 Generator Spaces (`usge.root`, `usge.structural-demand`, `usge.sdr-auction`, `usge.protocol-registry`).
 3. Allocate the 3 Oracle Spaces (`crypto-majors.root`, `crypto-majors.market-data`, `crypto-majors.ticks`).
-4. Allocate the 35 per-Prime Spaces (×7 × {root, primebook, structbook, relay, protocol-registry}).
+4. Allocate the 40 per-Prime Spaces (×8 × {root, primebook, structbook, relay, protocol-registry}).
 5. Allocate the 21 per-Halo Spaces (×3 × {root, nfat-term, custodial-crypto, custodial-crypto.attest-data, relay, synops, protocol-registry}).
 6. Write `&core.bootstrap` content — bootstrap recipe, boot manifest schema, P1 sigil / binding / implement code blob / workcell specs, loop requirement declarations, conformance hooks, and empty boot receipts.
 7. Write `&core.syngate`'s external-verb whitelist + verb→target-Space routing table.
-8. Write all ~27 beacon identities into `&core.registry.beacon` with pubkeys, classes, statuses, cert atoms, auth grants. (This absorbs the legacy Guardian-root authority chain into the beacon registry.)
-9. Write `&core.registry.protocol` content — Configurator Unit refs (`BEAMTimeLock`, `BEAMState`, `Configurator`), chain ids, ABIs / selectors, and provenance.
-10. Write `&core.governance.requests` content — request schema, status taxonomy, empty canonical request registry, and reserved synodoxics-handling refs.
-11. Write `&core.relay.govops` content — Core govops relay loop body and empty/current operational receipt state.
-12. Write per-Prime configs into each `&entity.prime.{id}.root` — `(prime-trc {prime} {amount})` atom and relay/operator config.
-13. Write per-Halo halo class content into each `&entity.halo.{id}.nfat-term` — standard terms (NFAT halo unit, max TTM 1y), `(permitted-risk-classes nfat-term [custodial-crypto])`, tranching / issuance presets, rate limits.
-14. Write per-Halo risk class content into each `&entity.halo.{id}.custodial-crypto` — the stress-envelope risk form, scenario-binding config, and attestation gates.
-15. Write per-Halo attestor loop bodies into each `&entity.halo.{id}.custodial-crypto.attest-data`.
-16. Write per-Halo relay loop bodies into each `&entity.halo.{id}.relay`.
-17. Write per-Halo synops loop bodies into each `&entity.halo.{id}.synops`.
-18. Write per-Halo `protocol-registry` content — Halo PAU contract refs.
-19. Write per-Prime relay loop bodies into each `&entity.prime.{id}.relay`.
-20. Write per-Prime `protocol-registry` content — Prime PAU contract refs.
-21. Write per-Prime `patch-{prime}` patch-beacon — loop body + per-entity config + auth, sudoed inline into each `&entity.prime.{id}.primebook`.
-22. Write Generator `protocol-registry` content — USDS / DAI / sUSDS / sDAI ERC20 refs.
-23. Write `&core.settlement` initial state — DSC cadence, 13:00 UTC cut, 16:00 UTC process-end / settle time, epoch-zero, current-epoch.
-24. Write `&core.treasury` initial state — Sky-controlled addresses and sudoed token-share values for unlaunched Prime tokens.
-25. Write Generator `structural-demand` initial state — 30-day SDR bucket definitions, lot-age surface source universe, Lindy SDR algorithm, SDR policy overlay, and empty/current effective SDR bucket capacity state.
-26. Write Generator `sdr-auction` content — ownership-weighted temporary SDR auction body and empty/current allocation state.
-27. Write Oracle `market-data` loop body into `&entity.oracle.crypto-majors.market-data`.
-28. Write Oracle `ticks` initial state (empty, will populate from beacon writes/reducer outputs).
-29. Write all test atoms + test-runner loop body into `&core.test-suite`.
-30. Configure operator-level test credentials and boot manifest values (runtime config, not ordinary synart content).
+8. Allocate the 14 canonical workspec Spaces (`&core.workspec.{ethereum,syngate,attestor,operator-ui,testonome,market-data-obtainer,market-data-processing}.{prod,test}`).
+9. Write all ~29 beacon identities into `&core.registry.beacon` with pubkeys, classes, statuses, cert atoms, auth grants. (This absorbs the legacy Guardian-root authority chain into the beacon registry.)
+10. Write `&core.registry.protocol` content — Configurator Unit refs (`BEAMTimeLock`, `BEAMState`, `Configurator`), chain ids, ABIs / selectors, and provenance.
+11. Write `&core.governance.requests` content — request schema, status taxonomy, empty canonical request registry, and reserved synodoxics-handling refs.
+12. Write `&core.relay.govops` content — Core govops relay loop body and empty/current operational receipt state.
+13. Write canonical workspec content — prod/test source specs, allowed test deltas, diff/check expectations, canary shapes, and secure-state boundaries.
+14. Write per-Prime configs into each `&entity.prime.{id}.root` — optional `(prime-given-name {prime} {name})`, `(prime-trc {prime} {amount} {epoch})`, `(prime-ijrc {prime} {amount} {epoch})`, and relay/operator config.
+15. Write per-Halo halo class content into each `&entity.halo.{id}.nfat-term` — standard terms (NFAT halo unit, max TTM 1y), `(permitted-risk-classes nfat-term [custodial-crypto])`, tranching / issuance presets, rate limits.
+16. Write per-Halo risk class content into each `&entity.halo.{id}.custodial-crypto` — the stress-envelope risk form, scenario-binding config, and attestation gates.
+17. Write per-Halo attestor loop bodies into each `&entity.halo.{id}.custodial-crypto.attest-data`.
+18. Write per-Halo relay loop bodies into each `&entity.halo.{id}.relay`.
+19. Write per-Halo synops loop bodies into each `&entity.halo.{id}.synops`.
+20. Write per-Halo `protocol-registry` content — Halo PAU contract refs.
+21. Write per-Prime relay loop bodies into each `&entity.prime.{id}.relay`.
+22. Write per-Prime `protocol-registry` content — Prime PAU contract refs.
+23. Write per-Prime `patch-{prime}` patch-beacon — loop body + per-entity config + auth, sudoed inline into each `&entity.prime.{id}.primebook`.
+24. Write Generator `protocol-registry` content — USDS / DAI / sUSDS / sDAI ERC20 refs.
+25. Write `&core.settlement` initial state — DSC cadence, 13:00 UTC cut, 16:00 UTC process-end / settle time, epoch-zero, current-epoch.
+26. Write `&core.treasury` initial state — Sky-controlled addresses and sudoed token-share values for unlaunched Prime tokens.
+27. Write Generator `structural-demand` initial state — 30-day SDR bucket definitions, lot-age surface source universe, Lindy SDR algorithm, SDR policy overlay, and empty/current effective SDR bucket capacity state.
+28. Write Generator `sdr-auction` content — ownership-weighted temporary SDR auction body and empty/current allocation state.
+29. Write Oracle `market-data` loop body into `&entity.oracle.crypto-majors.market-data`.
+30. Write Oracle `ticks` initial state (empty, will populate from beacon writes/reducer outputs).
+31. Write all test atoms + test-runner loop body into `&core.test-suite`.
+32. Configure operator-level test credentials and boot manifest values (runtime config, not ordinary synart content).
 
-After step 30, genesis sudo stops. The installer invokes `&core.bootstrap`; bootstrap materializes implement code blobs, binds sigils, registers workcell hubs, emits boot receipts, forks canonical → shadow, points shadow bindings at test workcells, runs the test suite, inspects, and discards or retains the shadow according to operator policy. Production starts after validation, with `&core.bootstrap` inert.
+After step 32, genesis sudo stops. The installer invokes `&core.bootstrap`; bootstrap materializes implement code blobs, binds sigils, registers workcell hubs, and emits boot receipts. Operators then run the P1 testosynome rehearsal through testonome workcells as described in [`testonomes-and-phase-rehearsal.md`](testonomes-and-phase-rehearsal.md). Production starts after validation, with `&core.bootstrap` inert and without mounting test-domain bindings or fixture workcells.
 
 ---
 
@@ -462,7 +489,7 @@ Each later phase is a topology delta — a precisely-specified set of sudo write
 
 ## Worked Example: A Single NFAT Loan
 
-A 6-month NFAT loan illustrating how the substrate primitives compose end-to-end. Spark-Term (one of the 3 P1 Halos) originates a custodial-crypto loan: $750K USDC against 1 BTC of borrower collateral. Spark Prime (one of the 7 Primes) deploys into the NFAT issued against this loan; the senior claim sits in Spark Prime's portion of Spark-Term's halobook.
+A 6-month NFAT loan illustrating how the substrate primitives compose end-to-end. Spark-Term (one of the 3 P1 Halos) originates a custodial-crypto loan: $750K USDC against borrower BTC collateral. Spark Prime (`Prime1`) deploys into the NFAT issued against this loan; the senior claim sits in `Prime1`'s portion of Spark-Term's halobook.
 
 ### Step 1: Per-loan exobook setup
 
@@ -489,15 +516,15 @@ Spark-Term's Riskbook (`&entity.halo.spark-term.riskbook.{rbk-id}`) holds the se
 
 ### Step 3: Stress-envelope risk form
 
-Risk form applies the approved scenario library, takes the worst senior-loss outcome. One illustrative scenario — BTC drops 45%, USDC depeg ~5%, execution haircut from market-memory impact curves, junior cushion revalues with stressed asset:
+Risk form applies the approved scenario library, takes the worst senior-loss outcome, and emits per-exobook CRR components. For this illustrative path, use the same component values as the borrower-to-ER scenario:
 
-- Asset value post-stress: $80K → $44K
-- Junior cushion (stressed BTC value): $44K × ($250K / $80K) = ~$13.75K
-- Effective senior loss = max(0, $36K − $13.75K) = $22.25K
-- USDC depeg loss on $750K notional: $37.5K
-- Total: $59.75K → loss fraction $59.75K / $750K ≈ 7.97%
+- default-CRR: 0.055
+- spread-CRR: 0.018
+- rate-CRR: 0.012
+- liquidity-CRR: 0.030
+- forced-loss-capital: 0.048 (= spread-CRR + liquidity-CRR)
 
-Not expected loss — the senior exo-unit loss under the binding approved scenario. Feeds default-CRR; risk form also outputs spread-CRR / rate-CRR / liquidity-CRR.
+Not expected loss — default-CRR is the senior exo-unit loss under the binding approved scenario. Spread, rate, and liquidity components are still computed; SDR matching only makes them non-binding for the matched portion.
 
 ### Step 4: Halobook P/T declarations
 
@@ -511,8 +538,8 @@ Eligibility check at Spark Prime's Primebook level:
 - `ascbook`: NO (not deep peg-defense liquid)
 - `tradingbook`: NO (P AND T both restrictive — no exit path)
 - `termbook`: NO (no tUSDS-matched liability)
-- `structbook`: YES (has SPTP = 180 days, SDR allocation available)
-- `hedgebook`: NO (no hedge instruments in v1 test)
+- `structbook`: YES (has SPTP = 180 days; SDR allocation affects matched vs unmatched amount, not membership)
+- `hedgebook`: NO (no hedge instruments in P1 test)
 
 → Routes to Spark Prime's `structbook`. (In Phase 1 only `structbook` is the active Primebook sub-book; the others exist as schema placeholders.)
 
@@ -521,21 +548,21 @@ Eligibility check at Spark Prime's Primebook level:
 Assume Spark Prime has been allocated $200M of bucket 6 (180 days) by the temporary SDR auction in `&entity.generator.usge.sdr-auction`, with $190M already matched → $10M capacity left.
 
 For this $750K position:
-- Matched: min($750K, $10M) = $750K (fully matched); capital = $750K × default-CRR ≈ $750K × 5% = $37.5K
+- Matched: min($750K, $10M) = $750K (fully matched); capital = $750K × default-CRR = $750K × 0.055 = $41.25K
 - spread-CRR / rate-CRR / liquidity-CRR computed but non-binding for the matched portion
-- **Position capital: ~$37.5K** (default only; structural matching covers credit-spread, rate, liquidity)
+- **Position capital: $41.25K** (default only; structural matching covers credit-spread, rate, liquidity)
 
-If capacity were exhausted before this loan landed: matched = $0, unmatched = $750K; capital = $750K × max(RW, forced-loss) = $750K × max(5%, 7.97%) = $59.8K → **position capital ~$59.8K**.
+If capacity were exhausted before this loan landed: matched = $0, unmatched = $750K; capital = $750K × (max(default-CRR, forced-loss-capital) + rate-CRR) = $750K × (max(0.055, 0.048) + 0.012) = **$50.25K**.
 
 Smooth blend (per [`matching.md`](matching.md) §3): capital scales continuously with utilization — no binary cliff.
 
 ### Step 7: Concentration check
 
-If aggregate ETH-backed lending exposure (across all loans, USDC and USDT denominated) at the Genbook level exceeds the governance-set cap on the "ETH-collateralized lending" category, the excess gets 100% CRR. V1 manual caps; the math is the same. Cross-Prime concentration enforcement at the Genbook is deferred in Phase 1 (Genbook itself is deferred).
+If aggregate ETH-backed lending exposure (across all loans, USDC and USDT denominated) at the Genbook level exceeds the governance-set cap on the "ETH-collateralized lending" category, the excess gets 100% CRR. P1 manual caps; the math is the same. Cross-Prime concentration enforcement at the Genbook is deferred in Phase 1 (Genbook itself is deferred).
 
 ### Scaling up: full-Prime computation
 
-For a full Prime's NFAT holdings (say, Spark Prime holding NFATs against 1000 loans summing to $500M across the 3 P1 Halos):
+For a full Prime's NFAT holdings (say, Spark Prime / `Prime1` holding NFATs against 1000 loans summing to $500M across the 3 P1 Halos):
 
 ```
 Total Position Capital  = Σ_position (Matched × default-CRR + Unmatched × forced-loss/rate treatment)
@@ -547,13 +574,13 @@ Prime TRRC      = insynTRRC + exsynTRRC      ; exsyn from patch-{prime} writing 
 Prime ER        = TRRC / TRC
 ```
 
-Each of the 7 Primes computes its own TRRC; cross-Prime aggregation at the Genbook is deferred.
+Each of the 8 Primes computes its own TRRC; cross-Prime aggregation at the Genbook is deferred.
 
 Atom-level companion trace: [`p1-nfat-atom-trace.md`](p1-nfat-atom-trace.md) expands this example into constructor writes, attestor gates, heartbeat reads, risk-form outputs, `structbook` matching, and final `prime-er` emission.
 
 ---
 
-## V1 Carve-outs
+## P1 Carve-outs
 
 Deliberate Phase 1 simplifications. Each has a clear later-phase replacement; the substrate the books rest on does not get rewritten when these unlock.
 
@@ -563,7 +590,7 @@ Deliberate Phase 1 simplifications. Each has a clear later-phase replacement; th
 4. TTM range 0–12 months only (per `nfat-term` halo class).
 5. SPTP = remaining nominal term (no stress modifier).
 6. One Genbook (USDS) only — and Genbook itself is deferred in P1 (tracking only via the primebook layer).
-7. Three Halos (spark-term, grove-term, maple-term) with seven Primes deploying into them.
+7. Three Halos (spark-term, grove-term, maple-term) with eight canonical Primes deploying into them.
 8. Super-senior tranches only (mezzanine / equity-tranche holdings get CRR 100% by default-deny).
 9. **Synserv-triggered temporary SDR auction** in `&entity.generator.usge.sdr-auction` — ownership-weighted temporary equation using effective SDR bucket capacity from `structural-demand`, Sky token share from `&core.treasury`, and per-Prime IJRC. There is no P1 reservation market, tug-of-war, sticky claim, durable SDR ownership, or carry-forward accounting. Real Prime-strategy-driven SDR auctions replace the body without relocating the read path.
 10. Single halo class (`nfat-term`) with single risk class (`custodial-crypto`); NFAT halo-unit issuance at max 1y TTM, deploying into `custodial-crypto` riskbooks only.
@@ -573,7 +600,7 @@ Deliberate Phase 1 simplifications. Each has a clear later-phase replacement; th
 14. DR, SDRR, tagging registry deferred; SDRR activates with real SDR auctions that pay fees.
 15. Core Entity halo-mode deferred; legacy exposures remain out-of-band / patch-fed for P1.
 
-Companion principles distilled from these decisions live in [`v1-principles.md`](v1-principles.md).
+Companion principles distilled from these decisions live in [`phase-1-principles.md`](phase-1-principles.md).
 
 ---
 
@@ -584,11 +611,13 @@ Companion principles distilled from these decisions live in [`v1-principles.md`]
 | Core shared Spaces | 10 (`bootstrap`, `syngate`, `loop.synserv`, `registry.beacon`, `registry.protocol`, `governance.requests`, `relay.govops`, `settlement`, `treasury`, `test-suite`) |
 | Generator (`usge`) | 4 |
 | Oracle (`crypto-majors`) | 3 |
-| Per-Prime ×7 (×5 each) | 35 |
+| Per-Prime ×8 (×5 each) | 40 |
 | Per-Halo ×3 (×7 each) | 21 |
-| **Fixed Spaces at genesis** | **73** |
+| Base P1 synart topology | 78 |
+| Canonical workspec Spaces | 14 (7 workspec pairs × prod/test) |
+| **Fixed Spaces at genesis** | **92** |
 | Constructor-made (per deal) | unbounded |
-| Beacon identities | ~27 (1 synserv + 1+ market-data + 3 attest-data + 7 patch + 1 relay-core + 7 relay-prime + 3 relay-halo + 3 synops-halo + 1 test) |
+| Beacon identities | ~29 (1 synserv + 1+ market-data + 3 attest-data + 8 patch + 1 relay-core + 8 relay-prime + 3 relay-halo + 3 synops-halo + 1 test) |
 | Constructors | 3 (`create-halobook`, `create-riskbook`, `create-exobook`) |
 | Operational verbs | ~20 |
 
@@ -602,8 +631,13 @@ Full focused-mode file map: [`../roadstart/README.md`](../roadstart/README.md). 
 - [`custodial-crypto-risk-form.md`](custodial-crypto-risk-form.md) — P1 lean risk-form body (full body at `../risk-framework/custodial-crypto-risk-form.md`)
 - [`grounding-and-workcells.md`](grounding-and-workcells.md) — grounded execution / sigil / workcell / bootstrap model
 - [`sigils-and-workcells.md`](sigils-and-workcells.md) — complete P1 callable/workcell inventory
+- [`testonomes-and-phase-rehearsal.md`](testonomes-and-phase-rehearsal.md) — testing / phase rehearsal doctrine
+- [`teleonomes.md`](teleonomes.md) — production-delivery notes for the five P1 teleonomes
+- [`localnome.md`](localnome.md) — local build ladder from sigil stack to full P1
+- [`localnome-containers.md`](localnome-containers.md) — Localnome container / workcell isolation doctrine and telseed packaging learning loop
+- [`testosynome-scenarios.md`](testosynome-scenarios.md) — cross-teleonome rehearsal scenarios and activation suite
 - [`roadmap-ideas.md`](roadmap-ideas.md) — patterns this doc instantiates (lift, insyn/exsyn, phase-invariant)
-- [`v1-principles.md`](v1-principles.md) — invariants distilled from the carve-outs section
+- [`phase-1-principles.md`](phase-1-principles.md) — invariants distilled from the carve-outs section
 - [`p1-nfat-atom-trace.md`](p1-nfat-atom-trace.md) — atom-level companion to the worked NFAT example
 - [`p1-borrower-nfat-user-scenario.md`](p1-borrower-nfat-user-scenario.md) — narrative borrower-to-ER scenario using the same topology
 - [`phase-1-overview.md`](phase-1-overview.md) — fronts-orientation layer above this canonical spec

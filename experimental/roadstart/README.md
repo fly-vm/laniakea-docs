@@ -9,19 +9,25 @@ The roadmap dir carries **lean P1-scoped versions** of four risk-framework files
 1. `big-picture.md` — Laniakea architecture context the roadmap assumes
 2. `risk-framework.md` — risk concepts the roadmap assumes (P1-binding details in lean files below)
 3. `../roadmap/phase-1-overview.md` — Phase 1 by fronts (orientation layer)
-4. `../roadmap/phase-1-spaces.md` — canonical Phase 1 Space-by-Space spec
-5. `../roadmap/v1-principles.md` — current P1 invariants (one line each)
-6. `../roadmap/attestor-atom-schema.md` — canonical attestor schema
-7. `../roadmap/custodial-crypto-risk-form.md` — lean: THE P1 binding risk form body
-8. `../roadmap/matching.md` — lean: smooth matched/unmatched blend formula
-9. `../roadmap/capital-formula.md` — lean: per-position formulas + TRRC + ER
-10. `../roadmap/market-memory-oracle.md` — lean: oracle inputs the risk form consumes
-11. `../roadmap/roadmap-ideas.md` — design patterns (lift, insyn/exsyn, sudo staircase, phase-invariant)
-12. `../roadmap/grounding-and-workcells.md` — P1 grounded execution: literals, special forms, sigils, bindings, implements, workcells, bootstrap
-13. `../roadmap/sigils-and-workcells.md` — canonical P1 callable/workcell inventory
-14. `../roadmap/p1-nfat-atom-trace.md` — resolved atom-level NFAT heartbeat trace
-15. `../roadmap/p1-borrower-nfat-user-scenario.md` — narrative borrower-to-ER scenario
-16. `../roadmap/asc-transition.md` — ASC/DAB details (parallel track to TRRC)
+4. `../roadmap/phase-1-spaces.md` — canonical Phase 1 synart Space-by-Space spec, including workspec Spaces
+5. `../roadmap/phase-1-principles.md` — current P1 invariants (one line each)
+6. `../roadmap/synlang-p1-form.md` — minimal executable synlang form LN1/LN6 rely on
+7. `../roadmap/attestor-atom-schema.md` — canonical attestor schema
+8. `../roadmap/custodial-crypto-risk-form.md` — lean: THE P1 binding risk form body
+9. `../roadmap/matching.md` — lean: smooth matched/unmatched blend formula
+10. `../roadmap/capital-formula.md` — lean: per-position formulas + TRRC + ER
+11. `../roadmap/market-memory-oracle.md` — lean: oracle inputs the risk form consumes
+12. `../roadmap/roadmap-ideas.md` — design patterns (lift, insyn/exsyn, sudo staircase, phase-invariant)
+13. `../roadmap/grounding-and-workcells.md` — P1 grounded execution: literal / special form / stdlib / speciallib / workcell-backed stack
+14. `../roadmap/noemar-synlib-telseed.md` — provisional principles for Noemar vs synlib vs telseed boundaries
+15. `../roadmap/sigils-and-workcells.md` — canonical P1 callable/workcell inventory
+16. `../roadmap/testonomes-and-phase-rehearsal.md` — testing / phase rehearsal doctrine: testonomes, testosynomes, workspec/workspace parity, prod unit tests, canaries
+17. `../roadmap/teleonomes.md` — five P1 production-candidate teleonome delivery specs
+18. `../roadmap/localnome.md` — iterative local build ladder through full P1
+19. `../roadmap/localnome-containers.md` — container / workcell / fake-external-world doctrine for Localnome and the later telseed packaging learning loop
+20. `../roadmap/testosynome-scenarios.md` — cross-teleonome scenario coverage and activation suite
+21. `../roadmap/p1-nfat-atom-trace.md` — resolved atom-level NFAT heartbeat trace
+22. `../roadmap/p1-borrower-nfat-user-scenario.md` — narrative borrower-to-ER scenario
 
 ## File map
 
@@ -30,31 +36,22 @@ The roadmap dir carries **lean P1-scoped versions** of four risk-framework files
 | `big-picture.md` | 5-layer arch, beacon taxonomy, smart contracts (PAU/Configurator/LCTS/NFATS), Noemar substrate, governance, accounting/DSC, phase ladder |
 | `risk-framework.md` | 5 risk types, book primitive, tranching + waterfall, currency frame, sub-book taxonomy, default-deny, capital formula, custodial-crypto form body, SDR model, asset risk-type tuple |
 | `../roadmap/phase-1-overview.md` | Fronts orientation (structural + operator) above the canonical Space spec |
-| `../roadmap/phase-1-spaces.md` | Canonical Phase 1 v4: 73 Spaces, halo class/risk class, constructors, beacons, verbs, ER data flow, genesis sudo sequence, worked NFAT example, V1 carve-outs |
-| `../roadmap/v1-principles.md` | 16 invariants distilled from P1 design |
+| `../roadmap/phase-1-spaces.md` | Canonical Phase 1 synart: 92 fixed Spaces (78 base topology + 14 workspec Spaces), halo class/risk class, constructors, beacons, verbs, ER data flow, genesis sudo sequence, worked NFAT example, P1 carve-outs |
+| `../roadmap/phase-1-principles.md` | 17 invariants distilled from P1 design |
+| `../roadmap/synlang-p1-form.md` | Minimal executable rule / loop / risk-form shapes needed by Localnome 1 and the custodial-crypto risk body |
 | `../roadmap/attestor-atom-schema.md` | Borrower readiness/admission + riskbook/exobook attestation schemas, ready-empty/funded-active lifecycle, default-deny gate, slashing surface |
 | `../roadmap/custodial-crypto-risk-form.md` | **Lean** — P1 binding risk-form body: composition scope, exobook waterfall, CRR component outputs, riskbook aggregation, structbook consumption |
 | `../roadmap/matching.md` | **Lean** — smooth blend formula, cumulative capacity matching, P1 SDR allocation source, termbook-vs-structbook |
 | `../roadmap/capital-formula.md` | **Lean** — per-position flow, structbook formula (only P1-active), TRRC aggregation, ER target |
 | `../roadmap/market-memory-oracle.md` | **Lean** — reducer concept, P1 output families catalog, scenario interface |
 | `../roadmap/roadmap-ideas.md` | Sudo staircase, frame mechanism, lift principle and its sub-patterns (code/data, insyn/exsyn, black-box, temporary-equation, phase-invariant), DSC, market-memory, don't-rabbit-hole |
-| `../roadmap/grounding-and-workcells.md` | P1 grounded execution stack: literals, special forms, sigils, bindings, implements, implement code blobs, workcells, installer, `&core.bootstrap` |
-| `../roadmap/sigils-and-workcells.md` | Complete P1 callable/workcell inventory: stdlib pure functions, `NOW`, `SYNGATE-READ`, `CHAINREAD`, workcells, Space feed map |
+| `../roadmap/grounding-and-workcells.md` | P1 grounded execution stack: literals, special forms, stdlib, speciallib, workcell-backed sigils, bindings, implements, implement code blobs, workcells, installer, `&core.bootstrap` |
+| `../roadmap/noemar-synlib-telseed.md` | Provisional boundary principles for keeping Noemar minimal while synlib carries governance-maintained defaults and telseeds carry birth/install packages |
+| `../roadmap/sigils-and-workcells.md` | Complete P1 callable/workcell inventory across special forms, stdlib, speciallib, `SYNGATE-READ`, `CHAINREAD`, workcells, Space feed map |
+| `../roadmap/testonomes-and-phase-rehearsal.md` | Testonomes/testosynomes, testonome workcells, embstate boundaries, workspec/workspace parity, P1 boot testing, later phase rehearsal, prod unit tests, prod canaries |
+| `../roadmap/teleonomes.md` | Production-candidate delivery notes for `synserv`, `entity-govops`, `core-govops`, `attestor`, and `market-data` teleonomes |
+| `../roadmap/localnome.md` | Build ladder from single-runtime callable tests to full local P1; intentionally narrative until Noemar has a real ingestion format |
+| `../roadmap/localnome-containers.md` | Container and external-world isolation doctrine; phases one-localtel-per-container into Localnome and defers telseed package shape until Localnome has produced evidence |
+| `../roadmap/testosynome-scenarios.md` | Scenario coverage matrix and P1 activation rehearsal suite |
 | `../roadmap/p1-nfat-atom-trace.md` | Atom-level NFAT trace: constructor writes, attestor gates, risk-form execution, structbook matching, TRRC / ER rollup |
 | `../roadmap/p1-borrower-nfat-user-scenario.md` | User/operator scenario: borrower readiness → Core inclusion → ready-empty books → queue claim / NFAT mint → disbursement → zero-SDR ER update |
-| `../roadmap/asc-transition.md` | ASC/DAB/peg-defense detailed mechanics, PSM transition to Grove |
-
-## Pre-synlang ↔ synlang vocabulary mapping
-
-For reading legacy `inactive/pre-synlang/roadmap/` material:
-
-| Pre-synlang term | Synlang-native equivalent |
-|---|---|
-| Synome-MVP | Universal Spaces (`&core.*`) + per-entity entart subtrees |
-| Halo Books (in Synome-MVP) | Factory-created `&entity.halo.<id>.halobook.<hbk-id>` Spaces |
-| Halo Units | Atoms inside book Spaces (one unit atom per NFAT) |
-| Risk Framework (Synome-MVP entity) | `&core.framework.risk` content (P1 has no `&core.framework.*`; per-halo risk class copies stand in) |
-| Attestations (Synome-MVP entity) | Atoms inside book Spaces (gated by class-accordant attest-data auth) |
-| Core Halo entries | Atoms in (a future) `&core.registry.corehalo`; P1 collapses into the existing 3 halos |
-| LPLA / LPHA / HPLA / HPHA codes | Two-tier authority + I/O role under it; legacy `hpla-` prefix survives only on legacy peer-to-peer beacons |
-| `lpla-checker` (legacy beacon class) | Synserv-run in-space calculation — no longer a separate beacon |

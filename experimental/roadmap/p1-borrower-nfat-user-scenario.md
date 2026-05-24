@@ -1,7 +1,6 @@
 # P1 Borrower-to-ER User Scenario
 
-**Status:** Companion scenario for Phase 1.
-**Scope:** One `spark-term` borrower onboarding and NFAT origination through the first Spark Prime `prime-er` update.
+**Scope:** One `spark-term` borrower onboarding and NFAT origination through the first Spark Prime (`Prime1`) `prime-er` update.
 
 This is a narrative path through the topology in [`phase-1-spaces.md`](phase-1-spaces.md), with key atoms shown where the authority boundary or rollup path matters. It does not add Spaces, entarts, beacon classes, or a queue Space.
 
@@ -10,7 +9,7 @@ This is a narrative path through the topology in [`phase-1-spaces.md`](phase-1-s
 | Item | Value |
 |---|---|
 | Halo | `spark-term` |
-| Prime | `spark` |
+| Prime | `Prime1` (given name: Spark) |
 | Risk class | `custodial-crypto` |
 | Halo class | `nfat-term` |
 | Borrower | `borrower-001` |
@@ -28,7 +27,7 @@ Illustrative numbers are deliberately simple. The CRR values are assumed outputs
 
 - No borrower Space exists. Borrower setup and admission atoms live in `&entity.halo.spark-term.custodial-crypto`.
 - The NFATS queue is chain-side Halo Facility infrastructure. The synome sees queue deposits, queue claims, conversions, and mints through relay receipts and halobook liability atoms.
-- `relay-prime-spark` and `relay-halo-spark-term` record chain-coupled actions. `synops-halo-spark-term` records in-synome borrower requests and book-accounting assignments only.
+- `relay-prime-Prime1` and `relay-halo-spark-term` record chain-coupled actions. `synops-halo-spark-term` records in-synome borrower requests and book-accounting assignments only.
 - `attest-data-spark-term` writes boolean gates. It never supplies collateral, debt, price, LTV, or CRR numbers.
 - `synserv-canonical` derives risk, matching, TRRC, and ER from atoms plus `CHAINREAD` sigil calls.
 
@@ -179,20 +178,20 @@ At this point there is a borrower and an action-ready book stack, but no asset e
 
 ## 4. Spark Prime queues USDS
 
-Spark Prime agrees out of band to fund this ready halobook. `relay-prime-spark` deposits USDS into the NFATS queue and records the Prime-side intent and receipt.
+Spark Prime agrees out of band to fund this ready halobook. `relay-prime-Prime1` deposits USDS into the NFATS queue and records the Prime-side intent and receipt.
 
 ```metta
-;; in &entity.prime.spark.relay
+;; in &entity.prime.Prime1.relay
 (nfat-queue-deposit spark-term hbk-001
-   (prime spark)
+   (prime Prime1)
    (asset usds)
    (amount 750000)
    (chain ethereum)
    (tx prime-queue-deposit-tx-001)
    (timestamp T7))
 
-;; in &entity.prime.spark.root
-(prime-nfat-deploy-intent spark nfat-spark-term-001
+;; in &entity.prime.Prime1.root
+(prime-nfat-deploy-intent Prime1 nfat-spark-term-001
    (halo spark-term)
    (halobook hbk-001)
    (notional usd 750000)
@@ -208,7 +207,7 @@ The queue is not a synome Space. It is contract state in the Halo Facility.
 ```metta
 ;; in &entity.halo.spark-term.halobook.hbk-001
 (queue-claim hbk-001 claim-001
-   (from-prime spark)
+   (from-prime Prime1)
    (asset-in usds)
    (amount-in 750000)
    (chain ethereum)
@@ -224,8 +223,8 @@ The queue is not a synome Space. It is contract state in the Halo Facility.
    (halo-class nfat-term))
 
 (nfat-holder nfat-spark-term-001
-   (prime spark)
-   (holder-pau spark-prime-pau)
+   (prime Prime1)
+   (holder-pau prime1-pau)
    (timestamp T8))
 
 (halo-cash-conversion hbk-001 conversion-001
@@ -344,12 +343,6 @@ On the next heartbeat, synserv reads the borrower admission, riskbook attestatio
    (liquidity-crr 0.030)
    (binding-scenario btc-liquidity-crash-v1))
 
-(riskbook-crr-components rbk-001 H
-   (default-crr 0.055)
-   (spread-crr 0.018)
-   (rate-crr 0.012)
-   (liquidity-crr 0.030)
-   (source-exobook spark-term-loan-001))
 ```
 
 The values above are placeholders. The important point is that all four risk types are present and travel upward.
@@ -360,7 +353,7 @@ The halobook projects the now-risked NFAT unit as a Prime-side asset.
 
 ```metta
 ;; in &entity.halo.spark-term.halobook.hbk-001
-(nfat-prime-projection nfat-spark-term-001 spark H
+(nfat-prime-projection nfat-spark-term-001 Prime1 H
    (source-exobook spark-term-loan-001)
    (notional-usd 750000)
    (sptp-bucket 6)
@@ -378,9 +371,9 @@ The scenario deliberately sets Spark's current SDR allocation for bucket 6 to ze
 
 ```metta
 ;; in &entity.generator.usge.sdr-auction
-(sdr-allocation spark 6 0 E)
+(sdr-allocation Prime1 6 0 E)
 
-;; in &entity.prime.spark.structbook
+;; in &entity.prime.Prime1.structbook
 (structbook-match nfat-spark-term-001 H
    (required-bucket 6)
    (matched-notional 0)
@@ -400,7 +393,7 @@ position_capital = 750000 * 0.067 = 50250
 ```
 
 ```metta
-;; in &entity.prime.spark.structbook
+;; in &entity.prime.Prime1.structbook
 (structbook-position-capital nfat-spark-term-001 H
    (matched-notional 0)
    (unmatched-notional 750000)
@@ -417,13 +410,13 @@ position_capital = 750000 * 0.067 = 50250
 Assume Spark had existing insynTRRC of 300,000, exsynTRRC of 1,200,000 from the patch beacon, and TRC of 5,000,000.
 
 ```metta
-;; in &entity.prime.spark.structbook
-(structbook-insyn-trrc spark 350250 H)
+;; in &entity.prime.Prime1.structbook
+(structbook-insyn-trrc Prime1 350250 H)
 
-;; in &entity.prime.spark.primebook
-(prime-insyn-trrc spark 350250 H)
-(prime-trrc spark 1550250 H)
-(prime-er spark 0.31005 H)
+;; in &entity.prime.Prime1.primebook
+(prime-insyn-trrc Prime1 350250 H)
+(prime-trrc Prime1 1550250 H)
+(prime-er Prime1 0.31005 H)
 ```
 
 Before this NFAT entered the rollup:

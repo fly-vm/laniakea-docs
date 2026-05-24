@@ -1,6 +1,5 @@
 # Sigils and Workcells -- P1 Inventory
 
-**Status:** P1 substrate inventory.
 **Scope:** Synserv/runtime-facing callable surface and workcells for Phase 1. Beacon-local teleonome/operator sigils are deliberately deferred; from synserv's perspective, beacons feed signed envelopes through syngate.
 
 This file is the complete P1 inventory. [`grounding-and-workcells.md`](grounding-and-workcells.md) defines the conceptual stack; this file pins the actual P1 callable/workcell list.
@@ -12,17 +11,15 @@ This file is the complete P1 inventory. [`grounding-and-workcells.md`](grounding
 | Category | P1 members | Backed by workcell? | Notes |
 |---|---|---:|---|
 | **Special forms** | `if`, `let`, `match`, `quote` | No | Evaluator control. Not functions and not sigils. |
-| **Stdlib pure** | `+`, `-`, `*`, `/`, `min`, `max`, `sum`, `=`, `<`, `<=`, `>`, `>=`, `sha256` | No | Deterministic local functions. No authority boundary. |
-| **Native stdlib sigil** | `NOW` | No | Runtime-grounded heartbeat time. Shadow tests may override it. |
+| **Stdlib** | `+`, `-`, `*`, `/`, `MIN`, `MAX`, `SUM`, `==`, `<`, `<=`, `>`, `>=`, `SHA256` | No | Pure bundled functions. Substitutable by value. |
+| **Speciallib** | `NOW`, `FORK`, `SWITCH`, `DISCARD`, `DIFF`, `MATERIALIZE-IMPLEMENT`, `BIND-SIGIL`, `REGISTER-WORKCELL-HUB`, `ENABLE-LOOP` | No | Bundled non-substitutable powers: scheduler reads, frame ops, bootstrap substrate ops. |
 | **Workcell-backed sigils** | `SYNGATE-READ`, `CHAINREAD` | Yes | Capability-bearing calls through bindings to implements and workcell hubs. |
-| **Bootstrap-only powers** | `MATERIALIZE-IMPLEMENT`, `BIND-SIGIL`, `REGISTER-WORKCELL-HUB`, `ENABLE-LOOP` | Boot only | Only callable by `&core.bootstrap`; not ordinary loop powers. |
-| **Noemar-native controls** | frame `fork`, `switch`, `discard`, `diff` | No | Test/boot harness operations, not P1 loop-callable sigils. |
 
-Explicitly out of ordinary P1 loop scope: `SENDTX`, `ASKLLM`, randomness, stochastic powers, non-Ethereum chain access, sentinel call-outs, and beacon-local operator tooling.
+Explicitly out of ordinary P1 synserv loop scope: `SENDTX`, `ASKLLM`, randomness, stochastic powers, non-Ethereum chain access, sentinel call-outs, and beacon-local operator tooling, including human-input/UI workcells used by teleonome orchestration loops.
 
 ---
 
-## 2. Native stdlib sigil
+## 2. Speciallib sigils
 
 ### `NOW`
 
@@ -30,9 +27,28 @@ Explicitly out of ordinary P1 loop scope: `SENDTX`, `ASKLLM`, randomness, stocha
 (NOW) -> timestamp
 ```
 
-`NOW` returns the synserv heartbeat scheduler timestamp for the current evaluation. It is stable within one heartbeat. Production uses the scheduler timestamp; shadow tests can pin or override it.
+`NOW` returns the synserv heartbeat scheduler timestamp for the current evaluation. It is stable within one heartbeat. Production uses the scheduler timestamp; rehearsal/test-domain runs can pin or override it.
 
 P1 uses `NOW` for DSC cut/settle checks, freshness/staleness checks, and timestamping derived heartbeat outputs. It is not an arbitrary machine-clock read inside equations.
+
+### Frame ops
+
+```text
+FORK SWITCH DISCARD DIFF
+```
+
+Frame ops are Noemar runtime controls used by test/boot harnesses and testonome workcells. Clean production mounts do not expose them to ordinary P1 synserv operation.
+
+### Bootstrap powers
+
+```text
+MATERIALIZE-IMPLEMENT
+BIND-SIGIL
+REGISTER-WORKCELL-HUB
+ENABLE-LOOP
+```
+
+Bootstrap powers are speciallib because they mutate runtime substrate. They are useful during `&core.bootstrap`; after boot, auth to their runtime targets expires or is revoked.
 
 ---
 
@@ -87,9 +103,11 @@ Minimum P1 query families:
 |---|---|---|
 | `syngate-intake-workcell` | `SYNGATE-READ` | Signed submission queue/network ingress, registered-beacon pubkey snapshot, signature verifier, nonce/rate-limit prefilter state, cursor store. |
 | `eth-mainnet-read-workcell` | production `CHAINREAD` | Ethereum full/archive node or equivalent RPC, provider redundancy, explicit block refs, log/receipt access, proof/provenance reporting, health checks. |
-| `eth-mainnet-fork-workcell` | shadow/test `CHAINREAD` | Forked Ethereum state or deterministic fixtures with the same read interface as production. |
+| `eth-mainnet-fork-workcell` | rehearsal/test-domain `CHAINREAD` | Forked Ethereum state or deterministic fixtures with the same read interface as production. |
 
-No P1 clock workcell exists: `NOW` is native scheduler time. Beacon-local workcells for market-data, attestors, relays, synops, patch providers, and future teleonomes are out of scope for this inventory.
+No P1 clock workcell exists: `NOW` is speciallib scheduler time. Beacon-local workcells for market-data, attestors, relays, synops, patch providers, human-input/UI, and future teleonomes are out of scope for this synserv inventory.
+
+A human-input/UI workcell is still a first-class workcell pattern: it backs bounded prompts, approvals, refusals, and operator context inside a teleonome embodiment's core orchestration loop. It should have production and test-domain bindings just like signer or chain workcells, but it is not a P1 synserv callable unless a later spec explicitly adds one.
 
 ---
 
@@ -109,16 +127,16 @@ No P1 clock workcell exists: `NOW` is native scheduler time. Beacon-local workce
 
 ## 6. Loop requirement shape
 
-The synserv loop declares stdlib modules, native sigils, workcell-backed sigils, bindings, workcells, and conformance tests separately:
+The synserv loop declares stdlib modules, speciallib, workcell-backed sigils, bindings, workcells, and conformance tests separately:
 
 ```metta
 (loop-requires synserv-canonical
    (stdlib [core-special-forms-v1 core-stdlib-v1])
-   (native-sigils [NOW])
+   (speciallib [NOW])
    (sigils [SYNGATE-READ CHAINREAD])
    (bindings [syngate-read-v1 chainread-eth-mainnet-v1])
    (workcells [syngate-intake-workcell eth-mainnet-read-workcell])
    (tests [syngate-read-conformance-v1 chainread-conformance-v1]))
 ```
 
-In shadow tests, `chainread-eth-mainnet-v1` is rebound to `eth-mainnet-fork-workcell`; the synlang read path does not change.
+In rehearsal/test-domain runs, `chainread-eth-mainnet-v1` is rebound to `eth-mainnet-fork-workcell`; the synlang read path does not change.

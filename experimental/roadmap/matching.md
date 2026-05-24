@@ -25,8 +25,11 @@ Empirical anchor: credit spreads modeled as Ornstein-Uhlenbeck (mean-reverting);
 ## 2. Eligibility (P1)
 
 ```
-structbook-eligible = (Has SPTP ≤ liability bucket tenor) AND (SDR allocation available)
+P1 structbook eligibility:
+   has-sptp(position) -> routes to structbook
 ```
+
+SDR allocation availability determines the matched portion within `structbook`. Missing or zero allocation gives `matched = 0` and `unmatched = full position`; it does not eject the position from `structbook`.
 
 The risk form always outputs rate-CRR. `structbook` doesn't delete it; for SDR-matched portions in P1 it becomes non-binding. Unmatched portions still carry rate-CRR.
 
@@ -39,6 +42,8 @@ structbook position CRR
   = matched_portion   × default-CRR
   + unmatched_portion × max(default-CRR, forced-loss-capital)
   + unmatched_portion × rate-CRR
+
+forced-loss-capital = spread-CRR + liquidity-CRR
 ```
 
 When SDR capacity shrinks (other Primes' allocations, redemption pressure):

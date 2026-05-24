@@ -1,6 +1,6 @@
 # Risk Framework — Essentials for Roadmap Work
 
-Just the risk-framework concepts the roadmap assumes but doesn't define. Drop-in companion to `lani/roadmap/`. Source: `lani/risk-framework/` (file map at bottom).
+Just the risk-framework concepts the roadmap assumes but doesn't define. Drop-in companion to `experimental/roadmap/`. Source: `experimental/risk-framework/` (file map at bottom).
 
 ## Five risk types
 
@@ -46,7 +46,7 @@ Anything overcollateralized — Sparklend, NFAT, CLO tranches, ABF — expresses
 
 ## Currency frame
 
-- **Frame** = abstract unit of account (USD, EUR, BTC). Inherits top-down from the Generator. v1 is single-Generator (USGE → USDS → USD).
+- **Frame** = abstract unit of account (USD, EUR, BTC). Inherits top-down from the Generator. P1 is single-Generator (USGE → USDS → USD).
 - **Instrument** = concrete realization with its own stress profile relative to its frame. Three kinds: `unit-of-account` (USD itself; not held), `stablecoin-proxy` (USDS/USDC/USDT — depeg stress), `native-volatile-asset` (BTC/ETH — volatility stress).
 
 The **Riskbook is the translation layer**: below it, native denominations; above it, everything is frame-pure. Depeg / FX / asset stress applied here.
@@ -68,7 +68,7 @@ The **Riskbook is the translation layer**: below it, native denominations; above
 
 | Sub-book | Default | Spread | Rate | Liquidity | P1 status |
 |---|---|---|---|---|---|
-| `ascbook` (peg-defense) | Capital | Capital | n/a | Product (must hold) | Deferred (ASC tracked out-of-band per `asc-transition.md`) |
+| `ascbook` (peg-defense) | Capital | Capital | n/a | Product (must hold) | Deferred (ASC tracked out-of-band) |
 | `tradingbook` (FRTB-style) | Capital | Forced-loss | Hedge or capital | Forced-loss | Deferred |
 | `termbook` (tUSDS YT match) | Capital | Covered (held to par) | Covered (fixed/fixed) | Covered | Deferred (no tUSDS market yet) |
 | `structbook` matched (SDR) | Capital | **Covered** | **Covered (P1 SDR match)** | **Covered** | **Active P1** |
@@ -102,6 +102,7 @@ position_capital = (sub-book formula over CRR components × position size)
 `structbook` (P1-active sub-book):
 
 ```
+forced-loss-capital := spread-CRR + liquidity-CRR
 matched_capital   = matched × default-CRR
 unmatched_capital = unmatched × max(default-CRR, forced-loss-capital) + unmatched × rate-CRR
 position_capital  = matched_capital + unmatched_capital
@@ -116,7 +117,9 @@ ER[p]   = TRRC[p] / TRC[p]      ; target ≤ 0.90
 
 Concentration excess (deferred enforcement in P1): excess portion × 100% CRR; max binding category only (no stacking).
 
-`TRC[p]` is held risk capital across JRC/EJRC/SRC tiers with ingression-adjusted recognition (`accounting/capital-stack.md`).
+`TRC[p]` is held risk capital across IJRC/EJRC/SRC tiers with ingression-adjusted recognition (`accounting/capital-stack.md`).
+
+Capital-tier glossary: IJRC = Initial Junior Risk Capital; EJRC = External Junior Risk Capital; MDC = Mezzanine Default Capital; SRC = Senior Risk Capital; TRC = Total Risk Capital; TRRC = Total Required Risk Capital; ER = Equity Requirement.
 
 ## Custodial-crypto risk form (the P1 form body)
 
@@ -157,7 +160,7 @@ Full body: `risk-framework/custodial-crypto-risk-form.md`.
 
 **Buckets:** 51 total, 30 days each. Bucket N = N × 30 days; bucket 50 = 1,500+ days. JAAA (1,260-day SPTP) → bucket 42. P1 180-day NFAT → bucket 6.
 
-**SPTP** (Stressed Pull-to-Par) = nominal pull-to-par × stress modifier. Reflects historical worst-case prepayment/amortization slowdowns (e.g., CLO AAA: 1.4× modifier from 2008–9 data). Split into credit-spread pull-to-par horizon vs interest-rate duration (V1 NFAT: both = nominal term, no stress modifier). Assets with no SPTP (ETH, perpetual lending) cannot be matched — route to `tradingbook` or unmatched.
+**SPTP** (Stressed Pull-to-Par) = nominal pull-to-par × stress modifier. Reflects historical worst-case prepayment/amortization slowdowns (e.g., CLO AAA: 1.4× modifier from 2008–9 data). Split into credit-spread pull-to-par horizon vs interest-rate duration (P1 NFAT: both = nominal term, no stress modifier). Assets with no SPTP (ETH, perpetual lending) cannot be matched — route to `tradingbook` or unmatched.
 
 **Matching eligibility** = `SPTP ≤ liability bucket tenor` AND a rate treatment (floating-rate, swap, rate-hedge capital, or in P1 SDR-matched).
 
@@ -214,7 +217,7 @@ Hedgebook deferred in P1.
 
 Two levels: **Primebook** (within a Prime's portfolio) and **Genbook** (system-wide). Mechanism: governance defines correlation categories (non-mutually-exclusive); each has a cap (% of scope); excess portion × 100% CRR; max binding category only (no stacking). **Capacity rights** ("grandfathered slices") prevent new deployers from instantly displacing incumbents — normalization period `T = max(asset_SPTP, 3 months)`.
 
-V1 measures gross-of-hedge.
+P1 measures gross-of-hedge.
 
 P1 implements neither level enforcement; mechanism is fully target.
 

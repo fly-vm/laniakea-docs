@@ -169,7 +169,9 @@ The jump from bot to teleonome is emergence — opinion becomes will. The jump f
 
 ## Proving Yourself
 
-There's only one way to cross the second threshold: **make money**.
+There's only one way to cross the second threshold: **generate or secure durable economic value**.
+
+"Make money" is the blunt version, but the deeper test is self-sustaining capital: revenue, protocol funding, endowed capital, or another reliable source that keeps the entity alive without arbitrary charity.
 
 Not as a proxy for intelligence. Not as a status game. But because economic value generation is the proof of:
 - Doing something others actually want

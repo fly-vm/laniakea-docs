@@ -67,7 +67,7 @@ Alignment is simpler and more permissive than it might seem. A teleonome is alig
 
 | Requirement | What It Means |
 |-------------|---------------|
-| **Bound to a human** | Has a human anchor (UBO or governance connection). Unbounded teleonomes are inherently threats. |
+| **Bound to human stakes** | Has traceable human accountability through a UBO, governance connection, or equivalent binding authority. Unbounded teleonomes are inherently threats. |
 | **Doesn't harm others** | Follows Synomic law, doesn't break rules, doesn't damage other aligned entities |
 | **Pays the synomic tax** | Delivers a governance-set share of wild capital to the coalition's collective infrastructure (working figure: a fixed, high, non-negotiable rate; exact percentage is open) |
 

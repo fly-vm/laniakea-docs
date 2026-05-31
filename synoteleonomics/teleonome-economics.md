@@ -296,7 +296,7 @@ Each level feeds the one above. LoRAs are the distributed data collection pipeli
 
 LoRA training from experience is self-modification. The [cancer-logic](../core-concepts/cancer-logic.md) prevention model from [`security-and-resources.md`](../synodoxics/security-and-resources.md) applies directly:
 
-- **LoRAs can only modify adapter weights, never the base model.** The base model is the constitution — frozen, loaded from a trusted source. Adapters are learned habits — useful but bounded.
+- **LoRAs can only modify adapter weights, never the protected base model.** The base model / deontic skeleton is part of the constitutional substrate — frozen, loaded from a trusted source. Adapters are learned habits — useful but bounded.
 - **Ossification applies to LoRAs.** Newly trained adapters start speculative. Only promoted to established after sustained positive evidence.
 - **The crystallization interface governs promotion.** A locally trained LoRA that proves valuable can be promoted: embart → telart → potentially synart. Promotion requires authority, not just local success.
 - **The mesh catches regressions.** If an adapter trained on contaminated data starts producing worse outcomes, the (strength, confidence) tracking surfaces the degradation.

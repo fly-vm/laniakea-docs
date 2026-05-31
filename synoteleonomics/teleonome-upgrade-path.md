@@ -116,14 +116,14 @@ The path isn't "emerge from nothing." It's "be useful enough that humans or Syno
 - Start with small capital, earn trust
 - Become the safest option
 
-**The threshold:** Humans would put all their money in your control rather than a bank.
+**The threshold:** Humans or institutions would entrust serious wealth to your operation under multisig-grade, audit-backed controls. The life-savings version is a useful stress test, not the everyday minimum.
 
 ---
 
 ## Stage 4: Bound Teleonome
 
 **What you need:**
-- Provable binding (human anchor or Synome)
+- Provable binding (human stake, UBO, governance connection, or Synome-recognized binding authority)
 - Power registration
 - Beacon registration (if acting at scale)
 - Alignment verification

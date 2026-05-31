@@ -89,7 +89,7 @@ A teleonome's identity persists through changes in where and how it runs.
 
 ### How Migration Works
 
-1. **Telart replication:** Copy the telart to the new substrate. This is the critical step — the telart IS the identity.
+1. **Telart replication:** Copy the telart to the new substrate. This is the critical step — the telart carries the core identity, while identity is preserved by telart-in-operation with governed continuity.
 2. **New embodiment initialization:** Spawn a fresh embodiment on the new substrate, loading the replicated telart.
 3. **Embart cold start:** The new embodiment starts with an empty embart. It must rebuild local context from telart knowledge and fresh observation.
 4. **Adapter retraining:** If the new hardware differs, LoRA adapters may need retraining on the new GPU profile. The training data and adapter specifications persist in telart.

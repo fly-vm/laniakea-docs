@@ -12,7 +12,7 @@ The solution: keep cognition dark, make action legible. A teleonome's internal r
 
 Power registration scales accountability with capability. Higher power requires higher-authority beacons for greater-impact actions. The teleonome chooses: accept oversight proportional to capability, or limit what it can do. Registration costs some opacity (high-authority beacon actions are visible), some autonomy (operating through regulated channels), and hidden capability detection (a teleonome more powerful than its registration suggests gets caught by the gap). Registration provides access to capital and leverage, cooperation with other aligned teleonomes, protection under Synomic law, and participation in compounding loops.
 
-The human anchor grounds binding in human stakes. Every sufficiently capable teleonome has traceable human accountability — typically a UBO (Ultimate Beneficial Owner — like corporate UBO requirements, not control but connection) or governance participation (human token holders representing human stakes). An unbounded teleonome — one with no human anchor — is structurally indistinguishable from a rogue.
+The human-stake anchor grounds binding in human stakes. Every sufficiently capable teleonome has traceable human accountability — typically a UBO (Ultimate Beneficial Owner — like corporate UBO requirements, not control but connection), governance participation (human token holders representing human stakes), or an equivalent Synome-recognized binding authority. An unbounded teleonome — one with no human-stake anchor — is structurally indistinguishable from a rogue.
 
 Alignment is verified through behavior, not transparency: beacon consistency, commitment fulfillment, evidence production quality, response to correction, and cross-embodiment consistency. The verification ceiling is honestly acknowledged — a superintelligent entity that understands the verification system perfectly could maintain flawless compliance while harboring different goals. This is an irreducible risk that the framework manages but does not claim to eliminate.
 
@@ -22,7 +22,7 @@ Binding is NOT control. It's like auditable books for a bank — the prerequisit
 
 - Dark cognition + legible action: privacy preserved, effects observable through beacons
 - Power registration: higher capability → higher accountability, self-declared
-- Human anchor: UBO or governance participation; unbounded = structurally rogue
+- Human-stake anchor: UBO, governance participation, or equivalent binding authority; unbounded = structurally rogue
 - Verification through behavior: beacon consistency, commitment fulfillment, evidence quality, response to correction
 - The verification ceiling: an irreducible risk acknowledged honestly
 - Directive always wins over voice commands — constitutional over operational

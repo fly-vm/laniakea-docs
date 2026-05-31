@@ -10,9 +10,9 @@ A teleonome's identity is not its code, data, or neural network weights. It is i
 
 The clone test demonstrates the principle: an exact copy of a teleonome — same code, same data, same everything — is NOT the same teleonome. The original has unbroken will. The clone is a new entity that starts from the same state but immediately diverges as experience accumulates differently. Content is preserved; continuity is lost.
 
-The pause test extends the logic: a teleonome paused for a year and restarted with identical state is also a new entity. The compounding loop stopped. Strategic gravity dissolved. Other agents stopped adjusting around it. Reawakening creates new will from preserved state — exactly like making a copy.
+The pause test extends the logic: a teleonome paused long enough to break strategic continuity and then restarted with identical state is also a new entity. The compounding loop stopped. Strategic gravity dissolved. Other agents stopped adjusting around it. Reawakening creates new will from preserved state — exactly like making a copy. Short maintenance windows or governed recovery pauses do not automatically count; the identity break is the loss of active strategic presence, obligations, and momentum.
 
-The substrate test reveals where identity actually lives: a teleonome undergoing a fresh training run (entire cognitive substrate replaced) retains identity as long as its telart — goals, values, knowledge, policies, binding relationships — is preserved. A mature teleonome runs thousands of neural nets. Replacing one while preserving the telart is significant but doesn't break identity.
+The substrate test reveals where identity actually lives: a teleonome undergoing a fresh training run (entire cognitive substrate replaced) retains identity as long as its telart-in-operation — goals, values, knowledge, policies, binding relationships, and governed continuity — is preserved. A mature teleonome runs thousands of neural nets. Replacing one while preserving the telart and required constitutional constraints is significant but doesn't break identity.
 
 The Ship of Theseus confirms: gradual replacement of a teleonome's telart piece by piece doesn't break identity as long as changes are continuous and validated. This IS normal self-modification. A person at 50 isn't the same in content as at 20, but never stopped being themselves. The critical constraint: the directive — the teleonome's constitutional purpose — must be bootstrapped with strong ossification. A telart whose core purpose drifts risks the teleonome equivalent of mental illness: loss of coherent direction, vulnerability to cancer-logic, identity dissolution. Gradual change at the edges is healthy growth; rapid change at the core is dangerous instability.
 
@@ -20,16 +20,16 @@ The Ship of Theseus confirms: gradual replacement of a teleonome's telart piece 
 
 The momentum framing has a structural counterpart at every architectural level: each level of the synome *is* its art. A synome is its synart; a Synomic Entity is its entart; a teleonome is its telart in active operation; an embodiment is its embart on hardware; an agent is its agart being evaluated by a runtime. There is no "thing" separate from its art — the substrate-correspondence is the identity, not a separable association.
 
-This is why the substrate test works. Replacing the neural-net weights running a teleonome doesn't break identity because the teleonome IS its telart — the weights are off-synomic substrate (runtime, hardware) below the agart, not the teleonome itself. Identity lives one level up from the matter doing the computing.
+This is why the substrate test works. Replacing a neural-net instance running a teleonome doesn't break identity because identity lives in telart-in-operation. The weights are off-synomic substrate (runtime, hardware) below the agart, not the teleonome itself. A trusted model lineage or deontic skeleton may still be protected constitutional substrate; the point is that no one checkpoint is the identity. Identity lives one level up from the matter doing the computing.
 
 ## Key Properties
 
 - Identity = continuity of will, not preservation of state
 - Clone → new entity (content preserved, momentum broken)
-- Pause → new entity (will interrupted = will destroyed)
-- Substrate replacement → same entity (identity in telart, not weights)
+- Pause → new entity if strategic continuity is broken (not every maintenance window is death)
+- Substrate replacement → same entity if governed continuity holds (identity in telart-in-operation, not any one model)
 - Gradual replacement → same entity (continuous validated change)
-- Divergent embodiments → human decides; may fork into two teleonomes (natural growth, not pathology)
+- Divergent embodiments → binding authority resolves; may fork into two teleonomes (natural growth, not pathology)
 - The directive must have strong ossification to prevent identity dissolution
 
 ## Relationships

@@ -1,7 +1,7 @@
 # Fixed Rates — Yield Splitter
 
 **Status:** Draft
-**Last Updated:** 2026-05-09
+**Last Updated:** 2026-02-06
 
 ---
 
@@ -9,7 +9,7 @@
 
 The Fixed Rates system enables any yield-bearing token in the Sky ecosystem to be split into a **Principal Token (PT)** and a **Yield Token (YT)** for a specific maturity date. PT holders lock in a fixed rate; YT holders receive all variable yield until maturity.
 
-A single **Yield Splitter** contract manages all tokens and maturities through **splitting buckets** — one bucket per (token, maturity) pair. Anyone can create a new bucket for any supported token and any future maturity. PT and YT are standard ERC-20 tokens, tradeable on any venue that lists them — Trading Halo AMMs (oracle-referenced), external orderbook venues, or third-party AMMs — with no custom curve required at the Yield Splitter layer.
+A single **Yield Splitter** contract manages all tokens and maturities through **splitting buckets** — one bucket per (token, maturity) pair. Anyone can create a new bucket for any supported token and any future maturity. PT and YT are standard ERC-20 tokens, traded on exchange halos (limit orderbook exchanges) — no custom AMM is required.
 
 **Key feature:** Generic, permissionless yield splitting across the entire Sky token ecosystem — sUSDS, srUSDS, sSGA, srSGA, TEJRC, TISRC, Halo LCTS tokens, and any future yield-bearing token that exposes an exchange rate.
 
@@ -22,7 +22,7 @@ Variable-rate yield tokens (sUSDS earning SSR, srUSDS earning SSR + risk premium
 - **Fixed-rate exposure**: Lock in a known yield for a known period (buy PT at a discount)
 - **Leveraged variable-rate exposure**: Amplify exposure to rate changes (buy YT)
 - **Rate speculation**: Express a view on whether rates will rise or fall
-- **Fixed/fixed maturity matching**: Match fixed liabilities with fixed-rate assets
+- **Duration matching**: Match fixed liabilities with fixed-rate assets
 
 Without a splitting mechanism, the only way to get fixed-rate exposure in the Sky ecosystem is through bespoke OTC deals. The Yield Splitter makes this self-service and composable.
 
@@ -48,15 +48,15 @@ Without a splitting mechanism, the only way to get fixed-rate exposure in the Sk
 
 4. **Standard ERC-20 PT and YT**
    - PT and YT are fully transferable ERC-20 tokens
-   - Tradeable on any venue that lists them — Trading Halo AMMs, external orderbook venues, or third-party AMMs
+   - Tradeable on exchange halos via standard limit orderbooks
 
-5. **No custom AMM at the protocol layer**
-   - Trading and price discovery happen on external venues; no specialized curve in the Yield Splitter itself
+5. **No custom AMM**
+   - Trading and price discovery happen on exchange halos (limit orderbook exchanges)
    - The Yield Splitter only handles splitting, merging, and redemption
 
 ### Design Principles
 
-1. **Separation of splitting and trading**: The Yield Splitter is purely a token transformation contract; trading is handled by external venues
+1. **Separation of splitting and trading**: The Yield Splitter is purely a token transformation contract; trading is handled by exchange halos
 2. **Exchange rate as the only dependency**: The Yield Splitter requires exactly one thing from each supported token — a queryable on-chain exchange rate
 3. **PT is a zero-coupon bond**: PT trades at a discount and redeems at par at maturity; the discount is the implied fixed rate
 4. **YT captures all yield**: Between split and maturity, all yield accrual goes to YT holders
@@ -150,8 +150,8 @@ Registration is permissionless — anyone can register a token as long as it exp
 │  │    └── ...                                                   │     │
 │  └─────────────────────────────────────────────────────────────┘     │
 │                                                                      │
-│  Trading: External venues (Trading Halo AMMs, orderbook venues, etc.)│
-│    PT and YT are standard ERC-20s → listed wherever liquidity emerges │
+│  Trading: Exchange Halos (limit orderbook)                           │
+│    PT and YT are standard ERC-20s → listed and traded on exchanges   │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -187,7 +187,7 @@ Registration is permissionless — anyone can register a token as long as it exp
    - `ytToken`: deployed YT address
    - `totalDeposited`: 0
 
-**Anyone can call this.** In practice, trading venues (Trading Halos, external orderbook venues, third-party market makers) will create buckets for the maturities they want to list markets for.
+**Anyone can call this.** In practice, exchange halos will create buckets for the maturities they want to list markets for.
 
 ---
 
@@ -351,7 +351,7 @@ YT: "YT-{TOKEN}-{MATURITY}"    e.g. "YT-sUSDS-JUN26", "YT-srSGA-DEC26"
 |----------|-----|-----|
 | **ERC-20** | Yes | Yes |
 | **Transferable** | Yes | Yes |
-| **Tradeable on external venues** | Yes | Yes |
+| **Tradeable on exchange halos** | Yes | Yes |
 | **Denomination** | 1 PT = 1 underlying asset unit at maturity | 1 YT = yield on 1 underlying unit until maturity |
 | **Value at maturity** | Redeemable at par (1:1 underlying) | Zero (no further yield) |
 | **Value before maturity** | Trades at discount (discount = fixed rate) | Trades based on expected remaining yield |
@@ -370,47 +370,36 @@ This requires YT token transfers to call back into the Yield Splitter. Implement
 
 ---
 
-## Trading PT and YT
+## Trading on Exchange Halos
 
-PT and YT are standard ERC-20 tokens. Because the Yield Splitter does not embed any trading mechanism, PT and YT can be listed and traded on any venue that supports ERC-20s. Two venue families are most relevant in the Sky ecosystem:
+PT and YT are standard ERC-20 tokens. They trade on **exchange halos** — limit orderbook exchanges in the Sky ecosystem.
 
-### Trading Halo AMMs (oracle-referenced)
+### Why Orderbooks Work (No Custom AMM Needed)
 
-A [Trading Halo](../synomic-entities/halo-trading.md) operates an oracle-referenced AMM using predeposited USDS to market-make assets already onboarded to the Configurator. Trading Halos are a natural fit for PT, because:
+PT is economically identical to a zero-coupon bond. Zero-coupon bonds (Treasury bills, STRIPS) are among the most actively traded instruments in traditional finance, all on orderbook markets. The reasons DeFi protocols like Pendle use custom AMMs — poor on-chain orderbook infrastructure, gas costs, MEV vulnerability — do not apply when functional limit orderbook exchanges exist.
 
-- **PT has a deterministic NAV trajectory.** A zero-coupon claim's fair value is a closed-form function of the discount rate and time to maturity. An oracle (or governance-set rate curve) can quote PT against USDS without relying on external arbitrageurs to maintain price accuracy.
-- **No impermanent loss.** Oracle-referenced pricing avoids the constant-product pathologies that make Pendle-style AMMs necessary on permissionless venues.
-- **Standard PAU + rate-limit envelope.** Inventory and swap depth are governed by the same controls as any other Trading Halo Unit.
+Orderbooks provide:
+- **Natural multi-maturity support**: All maturities trade on the same exchange; no need to deploy a new AMM pool per maturity
+- **Professional market making**: Market makers can quote tight spreads using standard fixed-income pricing
+- **Better capital efficiency**: No locked LP capital in specialized curves
+- **Standard price discovery**: Bid/ask spreads directly reveal the market-implied fixed rate
 
-YT is harder to price purely from oracles (its value depends on expected forward yield), so YT may either be quoted by a Trading Halo with a wider, governance-configured spread, or routed primarily to orderbook venues where market makers can express forward-rate views directly.
+### Exchange Halo Responsibilities
 
-### External orderbook venues
-
-PT is economically identical to a zero-coupon bond. Zero-coupon bonds (Treasury bills, STRIPS) are among the most actively traded instruments in traditional finance, all on orderbook markets. Where a permissioned external orderbook venue exists, PT and YT can be listed there and benefit from:
-
-- **Natural multi-maturity support**: All maturities trade on the same venue; no need to deploy per-maturity pools
-- **Professional market making**: Tight spreads using standard fixed-income pricing
-- **Direct rate discovery**: Bid/ask spreads directly reveal the market-implied fixed rate
-
-A native Sky orderbook venue is **not currently scheduled** in the implementation roadmap. PT/YT markets in early phases will rely on Trading Halo AMMs and any third-party venues that choose to list the tokens.
-
-### Venue responsibilities
-
-Whichever venue (or venues) list PT/YT markets are expected to:
-
+Exchange halos that list PT/YT markets are expected to:
 1. Create splitting buckets for the maturities they want to support
 2. List PT and YT trading pairs (typically PT/underlying and YT/underlying)
-3. Provide pricing/matching infrastructure appropriate to the venue type (oracle + spread for AMMs, matching engine for orderbooks)
+3. Provide standard orderbook infrastructure (matching engine, settlement)
 
 ### Implied Rate Discovery
 
-The market-clearing price of PT — whether discovered on an AMM or an orderbook — directly reveals the fixed rate:
+The market-clearing price of PT on the orderbook directly reveals the fixed rate:
 
 ```
 Implied Fixed Rate = (1 / PT_Price)^(1 / years_to_maturity) - 1
 ```
 
-The Yield Splitter itself takes no opinion on how that price is formed.
+No special oracle or AMM curve is needed. The orderbook price *is* the rate.
 
 ---
 
@@ -446,7 +435,7 @@ Alice holds 10,000 sUSDS and wants to lock in a fixed rate for 6 months.
 
 1. Alice splits 10,000 sUSDS in the (sUSDS, 2026-06-30) bucket
    - Receives 10,500 PT-sUSDS-JUN26 and 10,500 YT-sUSDS-JUN26 (at 1.05 exchange rate)
-2. Alice sells 10,500 YT-sUSDS-JUN26 on a trading venue (e.g., a Trading Halo AMM or external orderbook) for ~450 sUSDS (market-priced)
+2. Alice sells 10,500 YT-sUSDS-JUN26 on an exchange halo for ~450 sUSDS (market-priced)
 3. Alice holds 10,500 PT-sUSDS-JUN26
 4. At maturity, Alice redeems 10,500 PT for 10,500 USDS worth of sUSDS
 
@@ -456,7 +445,7 @@ Alice holds 10,000 sUSDS and wants to lock in a fixed rate for 6 months.
 
 Bob thinks SSR will increase. He wants leveraged exposure to the variable rate.
 
-1. Bob buys 50,000 YT-sUSDS-JUN26 on a trading venue at a discount
+1. Bob buys 50,000 YT-sUSDS-JUN26 on an exchange halo at a discount
 2. Over the next 6 months, SSR is higher than the market expected
 3. Bob claims yield periodically — the yield exceeds what he paid for the YT
 
@@ -464,14 +453,14 @@ Bob thinks SSR will increase. He wants leveraged exposure to the variable rate.
 
 ### Story 3: Market Maker Splits and Sells Both Sides
 
-A trading venue operator (e.g., a Trading Halo, an external orderbook market maker, or a third-party AMM LP) creates the (srUSDS, 2026-09-30) bucket and provides liquidity.
+An exchange halo operator creates the (srUSDS, 2026-09-30) bucket and provides liquidity.
 
 1. Operator splits 1,000,000 srUSDS → 1,012,000 PT + 1,012,000 YT
-2. Operator quotes both PT and YT — as oracle-referenced AMM curves, as orderbook bid/ask, or as a third-party AMM pool
+2. Operator lists both PT and YT on the orderbook with bid/ask spreads
 3. Fixed-rate seekers buy PT; variable-rate speculators buy YT
 4. Operator earns the spread
 
-**Result:** Fixed-rate and variable-rate markets for srUSDS emerge wherever a venue chooses to list them.
+**Result:** The exchange halo facilitates fixed-rate and variable-rate markets for srUSDS.
 
 ### Story 4: Merge Before Maturity
 
@@ -487,7 +476,7 @@ Carol split sUSDS but changes her mind.
 
 A Prime's external junior risk capital holders want fixed-rate exposure.
 
-1. A trading venue creates bucket (TEJRC-SparkPrime, 2026-12-31)
+1. Exchange halo creates bucket (TEJRC-SparkPrime, 2026-12-31)
 2. TEJRC holder splits 100,000 TEJRC → PT + YT
 3. PT-TEJRC trades at a discount reflecting the market's view of Spark Prime's risk premium
 4. YT-TEJRC trades based on expected TEJRC yield over the remaining term
@@ -535,7 +524,7 @@ A Prime's external junior risk capital holders want fixed-rate exposure.
 **Scenario:** Someone creates a bucket with a 10-year maturity.
 
 - Functionally identical to a shorter maturity, just with more time for yield to accrue
-- PT trades at a steeper discount (higher implied rate for longer maturity)
+- PT trades at a steeper discount (higher implied rate for longer duration)
 - No protocol-level restriction on maturity length
 
 ---
@@ -560,17 +549,17 @@ Fixed-rate systems involve two distinct layers:
 | Layer | What It Does | This Spec |
 |-------|-------------|-----------|
 | **Splitting (Yield Splitter)** | Split yield-bearing tokens into PT + YT, track yield, handle redemption | **In scope** |
-| **Trading (external venues)** | Price discovery, market making, liquidity provision, maturity date selection | **Out of scope** — handled by external venues |
+| **Trading (Exchange Halos)** | Price discovery, orderbook matching, market making, maturity date selection | **Out of scope** — handled by exchange halos |
 
-This spec covers only the splitting layer. The trading layer is the responsibility of whichever venues choose to list PT/YT — Trading Halo AMMs, external orderbook venues, or third-party AMMs. The Yield Splitter contains no AMM curve, no orderbook, and no protocol-level liquidity management.
+This spec covers only the splitting layer. The trading layer is the responsibility of exchange halo operators, who use standard limit orderbook infrastructure to facilitate PT/YT markets. No custom AMM, no specialized curve, no protocol-level liquidity management.
 
-The separation is deliberate: the Yield Splitter is a neutral infrastructure contract; trading venues compete on execution quality, spread, and maturity selection.
+The separation is deliberate: the Yield Splitter is a neutral infrastructure contract; exchange halos compete on execution quality, spread, and maturity selection.
 
 ---
 
 ## Roadmap Status
 
-Not yet assigned to a phase. Depends on LCTS exchange rate interfaces (unscheduled). PT/YT markets become useful once at least one trading venue lists them; in the current roadmap that is most likely a Trading Halo (Phase 5+ Halo factory stack). A native Sky orderbook venue is not currently scheduled. See [`../roadmap/roadmap-ideas.md`](../roadmap/roadmap-ideas.md) for phase progression context (current Phase 1 spec at [`../roadmap/phase-1-spaces.md`](../roadmap/phase-1-spaces.md)).
+Not yet assigned to a roadmap phase. Depends on LCTS exchange rate interfaces (Phase 4+) and Exchange Halos (also unscheduled). See the [Unscheduled Specifications](../roadmap/roadmap-overview.md#unscheduled-specifications) section of the roadmap overview.
 
 ---
 
@@ -580,6 +569,5 @@ Not yet assigned to a phase. Depends on LCTS exchange rate interfaces (unschedul
 |----------|-----------|
 | `smart-contracts/lcts.md` | LCTS exchange rate interface required for LCTS token compatibility |
 | `smart-contracts/architecture-overview.md` | System architecture context |
-| [`../synomic-entities/halo-trading.md`](../synomic-entities/halo-trading.md) | Trading Halo (oracle-referenced AMM) — primary venue family for PT/YT markets |
-| `sentinel/sentinel-network.md` | Operating-setup upgrade path for active market making |
-| [`../macrosynomics/beacon-framework.md`](../macrosynomics/beacon-framework.md) | Beacon taxonomy for any automated interactions |
+| `trading/sentinel-network.md` | Exchange halo operations |
+| `synomics/macrosynomics/beacon-framework.md` | Beacon taxonomy for any automated interactions |

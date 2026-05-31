@@ -1,4 +1,49 @@
-# Non-Fungible Allocation Token Standard (NFATS)
+# Non-Fungible Allocation Token Standard (NFATS) — Business Requirements
+
+**Status:** Draft
+**Last Updated:** 2026-03-01
+
+---
+
+## Executive Summary
+
+The Non-Fungible Allocation Token Standard defines a system for bespoke capital deployment deals between Primes and Halos. Unlike LCTS (which pools users into shared generations), NFATS treats each deal as an individual, non-fungible position represented by an NFAT (Non-Fungible Allocation Token).
+
+Capital flows through **NFAT Facilities** — smart contracts that define a "buybox" of acceptable deal parameters. Primes queue sUSDS into a Facility. The Halo (via an LPHA beacon, e.g. `lpha-nfat`) claims from queues when deals are struck, minting an NFAT that represents a claim on the capital deployment. Each NFAT represents a **Halo Unit** (liability side) — a claim on a **Halo Book** (asset side). The book is the bankruptcy-remote boundary: units sharing a book are pari passu on losses (unless tranched), while units on different books are fully isolated.
+
+Deal terms (APY, duration, maturity conditions) are tracked offchain in the **Synome**, while the onchain NFAT tracks only custody and ownership. Book contents are tracked in the Synome via attestations from an independent **Attestor** operating the `lpha-attest` beacon.
+
+**Key principles:**
+- **Onchain** = custody, ownership, facility parameters
+- **Offchain (Synome)** = deal terms, yield schedules, maturity conditions, book contents (via attestor)
+- **Halo Unit** (NFAT) = liability side — a claim on a Halo Book
+- **Halo Book** = asset side — a balanced ledger (assets = liabilities) backing one or more units; bankruptcy-remote boundary
+
+---
+
+## Why NFATS Exists
+
+NFATS solves a different problem than LCTS:
+
+| Scenario | Best Fit |
+|----------|----------|
+| Many users, same terms, shared capacity | LCTS |
+| Individual deals, bespoke terms, named counterparties | NFATS |
+
+### When to Use NFATS
+
+- Asset manager partnerships with negotiated terms
+- Deals where each depositor has different yield, duration, or conditions
+- Situations requiring transferable positions (secondary market, collateralization)
+- Regulated contexts where counterparty identity matters
+
+### When to Use LCTS
+
+- Open participation with uniform terms
+- Capacity-constrained strategies where fair distribution matters
+- Scenarios where fungibility and pooling are desirable
+
+---
 
 ## Halo Class Structure
 
@@ -9,7 +54,7 @@ An **NFAT Facility** is a **Halo Class** — containing both **Halo Units** (lia
 | Component | Description |
 |-----------|-------------|
 | **PAU** | Controller + ALMProxy + RateLimits for the Facility |
-| **High-authority beacons** | `nfat-{halo}` (relay) manages NFAT claims and redemptions; `attest-data-{class}` (attest-data-beacon, Oracle-Entity-owned) posts attestations |
+| **LPHA Beacons** | `lpha-nfat` manages NFAT claims and redemptions; `lpha-attest` posts attestations |
 | **Legal Buybox** | Acceptable parameter ranges, counterparty requirements, recourse mechanisms |
 | **Queue + Redeem Contracts** | Shared infrastructure for capital flows |
 
@@ -19,7 +64,7 @@ Each NFAT is a **Halo Unit** — a claim on a Halo Book. Units represent the lia
 
 | Parameter | Variation Within Buybox |
 |-----------|------------------------|
-| **Term / maturity** | e.g., 6-12 months vs 12-24 months |
+| **Duration** | e.g., 6-12 months vs 12-24 months |
 | **Size** | Different notional amounts per deal |
 | **APY** | Within the facility's acceptable range |
 | **Counterparty** | Different Primes for each NFAT |
@@ -47,7 +92,7 @@ The mapping between units and books is flexible:
 | **Many units : one book** | Multiple NFATs backed by the same blended collateral pool | Privacy protection — individual loan terms can't be inferred |
 | **Recursive** | Assets in Book A are Halo Units from Book B | Structured products, tranching across books |
 
-**Privacy example:** A book holds 5 different loans blended together. 10 NFATs are issued against the book. Each NFAT holder knows their own terms (APY, term, size) but cannot determine the individual terms of the 5 underlying loans — only the blended risk characteristics as attested by the Attestor.
+**Privacy example:** A book holds 5 different loans blended together. 10 NFATs are issued against the book. Each NFAT holder knows their own terms (APY, duration, size) but cannot determine the individual terms of the 5 underlying loans — only the blended risk characteristics as attested by the Attestor.
 
 ### Terms Source
 
@@ -57,6 +102,8 @@ NFAT terms can come from two sources:
 |------|-------------|
 | **General buybox** | Halo Class defines acceptable ranges; individual units fall within the buybox without predetermined terms. Halo has flexibility in structuring. |
 | **Ecosystem accord** | Pre-negotiated agreement specifying individual unit and book terms. Overrides the general buybox. More constrained, more predictable for the Prime. |
+
+This structure enables scalable bespoke deals: one legal framework, one beacon-operated workflow, many individual positions with varying terms, and flexible asset-side composition with built-in privacy.
 
 ---
 
@@ -154,7 +201,9 @@ NFAT Facility = PAU + NFAT Extensions
 - Risk tier / rating requirements
 - Any other constraints the Halo commits to
 
-**Onboarding:** the high-level flow is Prime synomic governance approves Facility → Prime deposits into queue → Halo claims. The specific governance + Configurator integration path is an open design question — see "Open Questions" below.
+**Onboarding (open question):**
+
+> **Note:** The exact onboarding mechanism for Primes to Facilities is an open design question. The flow is: Prime synomic governance approves the Facility → Prime can deposit into queue → Halo can claim. The specific governance and Configurator integration path needs further specification.
 
 **Key behaviors:**
 - One PAU per Facility
@@ -197,7 +246,7 @@ Transfer: sUSDS from queue to depositor
 - Available anytime (no lock period — unlike LCTS, there's no batch settlement lock window)
 - Complete withdrawal only (like LCTS "claim and exit")
 
-**Claim (`nfat-{halo}` beacon only):**
+**Claim (`lpha-nfat` beacon only):**
 
 ```
 claim(address target, uint256 amount)
@@ -236,7 +285,7 @@ Minted when Halo claims from a queue. Each NFAT is a **Halo Unit** (liability si
 | `mintedAt` | Timestamp when deal was struck |
 
 **Offchain data (Synome):**
-- Deal terms (APY, term / maturity, special conditions)
+- Deal terms (APY, duration, special conditions)
 - Payment schedule (bullet, amortizing, periodic interest)
 - Maturity date and conditions
 - Book assignment (which Halo Book backs this unit)
@@ -301,8 +350,8 @@ Books progress through a defined set of phases. Each phase transition requires a
 │ (empty)  │                       │ (USDS)   │◄─── can keep adding NFATs
 └──────────┘                       └────┬─────┘
                                         │
-                           attest-data-{class} posts attestation
-                           THEN nfat-{halo} changes status
+                           lpha-attest posts attestation
+                           THEN lpha-nfat changes status
                                         │
                                         ▼
                                   ┌───────────┐
@@ -310,7 +359,7 @@ Books progress through a defined set of phases. Each phase transition requires a
                                   │(obfuscated)│  High CRR
                                   └─────┬─────┘
                                         │
-                           attest-data-{class} posts "at rest" attestation
+                           lpha-attest posts "at rest" attestation
                                         │
                                         ▼
                                   ┌──────────┐
@@ -342,29 +391,29 @@ Books progress through a defined set of phases. Each phase transition requires a
 
 **Phase: Deploying (obfuscated)** — Assets are offboarded (USDS → USDC → deployed to borrowers). The Synome does not receive precise real-time updates about which specific assets have been deployed, to whom, or when. This is intentional: blending multiple deployments in a book prevents outsiders from inferring individual loan terms. From the Synome's perspective, the assets are in a "Schrödinger's risk" state — they could be anywhere from still cash to fully deployed. The deployment phase has a **higher CRR** to compensate for this uncertainty.
 
-**Phase: At Rest** — Fully deployed. The attestor has confirmed the risk characteristics of the deployed assets. The Synome knows the risk profile (credit quality, maturity / TTM, asset type) but not individual borrower identities or specific deal terms. CRR is lower than during deployment but still reflects the risk characteristics of the deployed assets.
+**Phase: At Rest** — Fully deployed. The attestor has confirmed the risk characteristics of the deployed assets. The Synome knows the risk profile (credit quality, duration, asset type) but not individual borrower identities or specific deal terms. CRR is lower than during deployment but still reflects the risk characteristics of the deployed assets.
 
 **Phase: Unwinding** — Assets return to the book. Halo funds the Redeem Contract from book proceeds. NFAT holders burn to claim.
 
 **Phase: Closed** — All units redeemed, book wound down.
 
-### The Book Attestation Oracle and `attest-data-{class}`
+### The Attestor and `lpha-attest`
 
-The **Book Attestation Oracle Entity** (or, more generally, an attestor Oracle Entity whitelisted by Sky governance) provides risk attestations about book contents. It operates the `attest-data-{class}` beacon.
+The **Attestor** is a company whitelisted by Sky governance to provide risk attestations about book contents. It operates the `lpha-attest` beacon.
 
 | Property | Description |
 |----------|-------------|
-| **Type** | `attest-data-beacon` class — deterministic, rule-based, owned by an Oracle Entity |
-| **Operator** | Attestor / Oracle Entity (whitelisted by Sky governance) |
-| **Capability** | Write attestations into the target exobook Spaces in the Synome |
+| **Type** | LPHA (Low Power, High Authority) — deterministic, rule-based |
+| **Operator** | Attestor company (whitelisted by Sky governance) |
+| **Capability** | Write attestations into Synome |
 | **Cannot** | Move capital, mint NFATs, change book status directly |
-| **Accountability** | Subject to the owning Oracle Entity's govops supply chain of checks and audits; slashable on misbehavior |
+| **Accountability** | Subject to its own govops supply chain of checks and audits |
 
-**Two-beacon deployment gate:** Neither `attest-data-{class}` nor `nfat-{halo}` can trigger deployment alone. The attestor must first post an attestation into the Synome via `attest-data-{class}`; only then can `nfat-{halo}` change the book's status. This separation of concerns ensures independent validation.
+**Two-beacon deployment gate:** Neither `lpha-attest` nor `lpha-nfat` can trigger deployment alone. The attestor must first post an attestation into the Synome via `lpha-attest`; only then can `lpha-nfat` change the book's status. This separation of concerns ensures independent validation.
 
 ```
 ATTESTOR                          SYNOME                          HALO
-(attest-data-{class})                                                   (nfat-{halo})
+(lpha-attest)                                                   (lpha-nfat)
     │                                │                               │
     │  1. Upload attestation         │                               │
     │  "Book X: assets will           │                               │
@@ -374,7 +423,7 @@ ATTESTOR                          SYNOME                          HALO
     │  ─────────────────────────────▶│                               │
     │                                │                               │
     │                                │  2. Attestation present ✓     │
-    │                                │     nfat-{halo} can now         │
+    │                                │     lpha-nfat can now         │
     │                                │     change book status        │
     │                                │  ────────────────────────────▶│
     │                                │                               │
@@ -398,11 +447,11 @@ The risk model creates economic incentives that balance privacy against transpar
 | Book Phase | CRR Impact | Incentive Created |
 |---|---|---|
 | **Filling** (USDS) | Low CRR | Known asset, no ambiguity |
-| **Deploying** (obfuscated) | High CRR | Minimize the deployment window; stagger deployments across books |
+| **Deploying** (obfuscated) | High CRR | Minimize deployment duration; stagger deployments across books |
 | **At Rest** (attested) | Medium CRR | Maintain attestation cadence; encourage frequent re-attestation |
 | **Missed re-attestation** | CRR increases | Prompt re-attestation to restore lower capital charge |
 
-> **CRR calibration ownership:** The qualitative incentive structure above (Low/High/Medium) is defined here. Numeric CRR values for each book-phase are owned by the risk-framework ([`../risk-framework/capital-formula.md`](../risk-framework/capital-formula.md)) and will be published there when calibration is complete.
+> **CRR calibration ownership:** The qualitative incentive structure above (Low/High/Medium) is defined here. Numeric CRR values for each book-phase are owned by the risk-framework (`risk-framework/capital-formula.md`) and will be published there when calibration is complete.
 
 Primes and Halos are economically incentivized to keep the obfuscated deployment phase as short as possible (reducing CRR cost) while still delivering adequate borrower privacy.
 
@@ -422,7 +471,7 @@ Primes and Halos are economically incentivized to keep the obfuscated deployment
 - Halo creates a new book (or uses an existing book in filling phase)
 
 **4. Claim (deal struck)**
-- Halo (via `nfat-{halo}`) claims from Prime's queue (specifying amount)
+- Halo (via `lpha-nfat`) claims from Prime's queue (specifying amount)
 - sUSDS transferred to book (via Facility ALMProxy)
 - NFAT minted to Prime (Halo Unit — claim on the book)
 - Deal terms recorded in Synome (APY, term, maturity date, book assignment)
@@ -430,8 +479,8 @@ Primes and Halos are economically incentivized to keep the obfuscated deployment
 - Additional NFATs may be swept into the same book over time
 
 **5. Attestation and deployment**
-- Attestor uploads pre-deployment attestation via `attest-data-{class}` (risk characteristics, timeframe, legal confirmation)
-- `nfat-{halo}` transitions book to deploying status
+- Attestor uploads pre-deployment attestation via `lpha-attest` (risk characteristics, timeframe, legal confirmation)
+- `lpha-nfat` transitions book to deploying status
 - Capital offboarded (USDS → USDC → deployed to borrowers)
 - Deployment is obfuscated — Synome does not track individual deployments in real time
 - Higher CRR applies during this phase
@@ -465,7 +514,7 @@ Primes and Halos are economically incentivized to keep the obfuscated deployment
 
 ### NFAT Behaviors
 
-**Halo actions (via `nfat-{halo}`):**
+**Halo actions (via `lpha-nfat`):**
 - **Claim**: Take sUSDS from a Prime's queue and mint an NFAT
   - Specifies: which Prime, how much to claim
   - Results in: sUSDS moves to Halo, new NFAT minted, Synome records deal terms
@@ -516,7 +565,7 @@ Primes and Halos are economically incentivized to keep the obfuscated deployment
    - Queue balance: 50M
 
 3. **Claim**
-   - Halo 123 `nfat-{halo}` claims 25M from Prime X's queue
+   - Halo 123 `lpha-nfat` claims 25M from Prime X's queue
    - NFAT #1 minted to Prime X (25M principal)
    - Synome records: 6-month term, 10% APY, maturity 2025-07-15
    - Queue balance: 25M remaining
@@ -699,6 +748,25 @@ Primes and Halos are economically incentivized to keep the obfuscated deployment
 
 ---
 
+## NFATS vs LCTS Comparison
+
+| Aspect | LCTS | NFATS |
+|--------|------|------|
+| **Model** | Pool / ETF | Individual deals |
+| **Position type** | Fungible shares | Non-fungible NFAT |
+| **Terms** | Same for all in generation | Bespoke per deal |
+| **Queue** | Shared across generation | Individual per depositor |
+| **Capacity allocation** | Proportional distribution | Per-deal (Halo decides) |
+| **Settlement** | Batch (daily cycle) | Per-deal (anytime) |
+| **Transferability** | Non-transferable shares | Transferable NFAT (optionally restricted) |
+| **Exit before settlement** | Withdraw from active generation | Withdraw from queue before claim |
+| **Redemption initiation** | Holder-initiated only | Either party (request/fulfill or direct) |
+| **Reward mechanism** | rewardPerToken accumulator | Flexible (offchain-driven) |
+| **Onchain complexity** | Higher (generations, settlement) | Lower (queue + NFAT) |
+| **Offchain complexity** | Lower (uniform terms) | Higher (per-deal tracking) |
+
+---
+
 ## NFATS as RiverUSDS Superset
 
 NFATS is designed to cover all RiverUSDS (ERC-7540 async vault) use cases when deposits are pre-agreed and tokens have transfer restrictions:
@@ -715,6 +783,59 @@ NFATS is designed to cover all RiverUSDS (ERC-7540 async vault) use cases when d
 **Key insight**: Redemption is a two-way exchange — NFAT in one direction, cash out the other. Either party can initiate by putting their side in first. This matches ERC-7540's request/fulfill pattern while also supporting Halo-initiated redemptions.
 
 When all depositors have identical terms and transfer restrictions, NFATS effectively behaves like a restricted ERC-7540 vault — but with the flexibility to support bespoke terms per position when needed.
+
+---
+
+## Integration Notes
+
+### Halo LPHA Beacon (`lpha-nfat`)
+
+TBD — `lpha-nfat` beacon integration for automated claims, reward distribution, and redemptions.
+
+### ALM Controller Compatibility
+
+NFATS requires custom ALM controller integration (similar to LCTS). The Halo's ALMProxy holds claimed sUSDS and sources redemption/reward payments.
+
+### Halo Artifact
+
+Deal terms should be recorded in the Halo Artifact for transparency and auditability. The NFAT's `tokenId` serves as the key linking onchain position to offchain terms.
+
+---
+
+## Design Rationale
+
+### Why Individual Queues?
+
+Shared queues (like LCTS generations) make sense when all participants receive identical treatment. For bespoke deals, individual queues:
+- Allow depositors to signal interest without commitment
+- Let the Halo selectively accept deals
+- Avoid complexity of proportional distribution
+- Enable partial claims (multiple deals with same depositor)
+
+### Why NFATs?
+
+ERC-20 tokens imply fungibility — any token is interchangeable with any other. When deals have different terms, forcing them into a fungible token creates friction:
+- Transfer restrictions feel like hacks
+- Per-holder accounting becomes complex
+- The token doesn't represent what it claims to
+
+NFATs make the non-fungibility explicit:
+- Each position is clearly unique
+- Transfers are natural (new holder inherits the deal)
+- Secondary markets can price deals individually
+- No pretense of fungibility
+
+### Why Offchain Terms?
+
+Putting all deal terms onchain would:
+- Increase gas costs significantly
+- Reduce flexibility for complex arrangements
+- Require contract upgrades for new term types
+
+Offchain terms with onchain custody provides:
+- Maximum flexibility for bespoke arrangements
+- Simple, auditable onchain contracts
+- Easy extension to new deal structures
 
 ---
 
@@ -761,14 +882,16 @@ An NFAT can optionally be wrapped in a fungible ERC-20 token, allowing the deal 
 
 ---
 
-## Open Questions
+## Related Documents
 
-- **Prime → Facility onboarding mechanism.** The flow is settled
-  (Prime synomic governance approves Facility → Prime deposits into
-  queue → Halo claims), but the specific governance + Configurator
-  integration path is not yet specified. Forcing trigger: first
-  live NFAT Facility deployment.
-- **`nfat-{halo}` integration.** Beacon integration for automated
-  claims, reward distribution, and redemptions is not yet
-  specified. Forcing trigger: first automated NFAT Facility (today
-  flows are manual or attestor-mediated).
+| Document | Relationship |
+|----------|--------------|
+| `term-halo.md` | Business overview of Term Halos using NFATS |
+| `lcts.md` | Alternative token standard for pooled, fungible positions |
+| `sentinel-network.md` | `lpha-nfat` beacon context (LPHA) and relationship to sentinels |
+| `portfolio-halo.md` | Portfolio Halo (LCTS-based alternative) |
+| `beacon-framework.md` | `lpha-nfat` and `lpha-attest` as LPHA beacons |
+
+---
+
+*Document Version: 0.3*

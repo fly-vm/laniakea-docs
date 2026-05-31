@@ -40,9 +40,7 @@ What differs between PAU deployments:
 | **Halo** | Mainnet | Prime Layer | RWA strategies, custodians, regulated endpoints |
 | **Foreign** | Altchains | Mainnet Prime (via bridge) | Foreign Halo Layer |
 
-**Relationship to Synome layers:** These four capital-flow layers describe how funds move through smart contracts. They all map to Layer 2 (Synomic Entities) of the five-layer Synome architecture (Synome → Synomic Entities → Teleonomes → Embodiments → Embodied Agents). Generator, Prime, Halo, and Foreign are all Synomic Entity types — the Synome layers describe governance and cognition, while the capital-flow layers describe on-chain fund movement. See [`../macrosynomics/synome-overview.md`](../macrosynomics/synome-overview.md).
-
-**Layer note:** This document describes the chain layer (EVM bytecode). Synlang describes the synome layer that sits on top. Beacons bridge them — the **endoscraper** grounded primitive `(chain-read $contract $slot)` lets any rule in any Space read chain state directly; **relay beacons** emit chain transactions based on synart-derived state. See [`../macrosynomics/beacon-framework.md`](../macrosynomics/beacon-framework.md).
+**Relationship to Synome layers:** These four capital-flow layers describe how funds move through smart contracts. They all map to Layer 2 (Synomic Agents) of the five-layer Synome architecture (Synome → Synomic Agents → Teleonomes → Embodiments → Embodied Agents). Generator, Prime, Halo, and Foreign are all Synomic Agent types — the Synome layers describe governance and cognition, while the capital-flow layers describe on-chain fund movement. See `synomics/synome-overview.md`.
 
 ---
 
@@ -58,8 +56,8 @@ What differs between PAU deployments:
 
 - Receives capital from Generator via ERC4626 vault
 - Deploys to:
-  - **Halo Layer** — the primary long-term deployment path (includes both Prime-created Halos and Core Entities)
-  - **Core Entities** — legacy DeFi (Morpho vaults, Aave pools, SparkLend) wrapped as Halo Units under Core Council governance
+  - **Halo Layer** — the primary long-term deployment path (includes both Prime-created Halos and Core Controlled Agents)
+  - **Core Controlled Agents** — legacy DeFi (Morpho vaults, Aave pools, SparkLend) wrapped as Halo Units under Core Council governance
   - **Foreign Primes** — via bridge for cross-chain deployment
 - Each Prime controls its own vault's liquidity availability
 
@@ -93,7 +91,7 @@ What differs between PAU deployments:
 |------------|-----------|---------|
 | Generator → Prime | ERC4626 vault | Rate limits on deposit/withdraw |
 | Prime → Halo | ERC4626 vault (or other vault types) | Rate limits + vault-specific parameters |
-| Prime → Core Entities | Via CoreHaloFacet (ERC4626, Aave, Curve interfaces) | Rate limits + protocol-specific parameters |
+| Prime → Core Controlled Agents | Via CoreHaloFacet (ERC4626, Aave, Curve interfaces) | Rate limits + protocol-specific parameters |
 | Prime → Foreign Prime | Direct bridge transfer (no vault) | Rate limits on LayerZero/CCTP transfers |
 | Foreign Prime → Foreign Halo | Various vault types | Rate limits + vault-specific parameters |
 | Halo → RWA/Custodian | Asset transfer | Rate limits on transfers to custodian addresses |
@@ -175,7 +173,7 @@ This means:
    │    RWA/Custodian                      RWA/Custodian
    │    Endpoints                          Endpoints
    │
-   └──► Core Entities
+   └──► Core Controlled Agents
         (Morpho, Aave, SparkLend - legacy DeFi wrapped as Halo Units)
 ```
 
@@ -191,7 +189,7 @@ Primes *ingress* (recognize) this external risk capital as part of their capital
 
 **Note: User Touchpoints — Demand Side and Supply Side**
 
-The capital flow above is infrastructure — funds move through PAUs, but end users interact at the edges. On the **demand side**, sUSDS is the user-facing product: holders deposit USDS and earn the savings rate passively. On the **supply side**, folios are the user-facing layer: each folio is a principal-controlled (or automated) PAU that gives the end user a direct capital-deployment surface within the Laniakea stack. sUSDS abstracts away all deployment complexity; folios expose it, giving sophisticated participants a governed vehicle for active allocation while inheriting the same rate-limit and risk-capital infrastructure as Primes and Halos. See [`../synomic-entities/folio.md`](../synomic-entities/folio.md).
+The capital flow above is infrastructure — funds move through PAUs, but end users interact at the edges. On the **demand side**, sUSDS is the user-facing product: holders deposit USDS and earn the savings rate passively. On the **supply side**, folios are the user-facing layer: each folio is a principal-controlled (or automated) PAU that gives the end user a direct capital-deployment surface within the Laniakea stack. sUSDS abstracts away all deployment complexity; folios expose it, giving sophisticated participants a governed vehicle for active allocation while inheriting the same rate-limit and risk-capital infrastructure as Primes and Halos. See `sky-agents/folio-agents/agent-type-folios.md`.
 
 ---
 
@@ -218,12 +216,12 @@ A factory system that can deploy standardized PAU infrastructure:
 
 ## Beacon and Sentinel Integration
 
-PAUs are operated by **relay beacons** and **stream-sentinels** — registered against the synome. Beacons:
+PAUs are operated by beacons — LPHA beacons (deterministic rule execution) in Phase 1, and HPHA sentinel formations (AI-capable, real-time) in later phases. Beacons:
 - Execute approved operations within rate-limited bounds
 - Monitor positions and trigger rebalancing
 - Respond to market conditions within governance-approved parameters
 
-The governance layer defines what beacons can do; beacons execute within those bounds. The canonical full-automation pattern is a three-beacon operating setup — **baseline-relay** + **warden-relay** + **stream-sentinel** — deployed together to operate Primes and Halos. These are three distinct beacon classes, not a single "formation" class. See [`../sentinel/sentinel-network.md`](../sentinel/sentinel-network.md) and [`../noemar-synlang/synlang-patterns.md`](../noemar-synlang/synlang-patterns.md) §6. Beacon classification follows [`../macrosynomics/beacon-framework.md`](../macrosynomics/beacon-framework.md).
+The governance layer defines what beacons can do; beacons execute within those bounds.
 
 ---
 

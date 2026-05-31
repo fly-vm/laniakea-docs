@@ -26,11 +26,11 @@ LCTS integrates with the protocol-wide daily settlement cycle (see `accounting/d
 
 LCTS solves the problem: **how do you fairly distribute limited conversion capacity among many users?**
 
-### Use Cases by Entity Type
+### Use Cases by Agent Type
 
-LCTS is a general-purpose token standard used across multiple layers of the Synomic Entity framework:
+LCTS is a general-purpose token standard used across multiple layers of the Sky Agent framework:
 
-| Entity | Token | Description |
+| Agent | Token | Description |
 |-------|-------|-------------|
 | **Generator** | srUSDS | External pooled Senior Risk Capital — global risk absorption for the generated asset |
 | **Prime** | TEJRC | Tokenized External Junior Risk Capital — external parties providing junior risk capital to a Prime |
@@ -61,7 +61,7 @@ LCTS eliminates this by pooling users in a generation and distributing capacity 
 
 1. **Rate-Limited Conversions**
    - Conversions (subscribe or redeem) occur only when external capacity is available
-   - An LCTS-pBEAM (operated by an authorized relay beacon, e.g. `lcts-{halo}`) controls how much capacity is allocated each epoch
+   - An LCTS-pBEAM (operated by an authorized LPHA beacon, e.g. `lpha-lcts`) controls how much capacity is allocated each epoch
    - Users cannot bypass the queue to convert instantly
 
 2. **Fair Proportional Distribution**
@@ -87,8 +87,6 @@ LCTS eliminates this by pooling users in a generation and distributing capacity 
 2. **Gas Efficiency**: All operations are O(1) regardless of user count
 3. **Minimal Trust**: Only the LCTS-pBEAM can lock/settle; all other logic is deterministic
 4. **Settlement Integration**: Generation lifecycle is synchronized with the daily settlement cycle
-
-**Layer note:** This document describes on-chain (EVM) contracts. The beacon identifiers below (`lcts-{halo}` etc.) are operational names; their conceptual classification under the synome layer follows [`../macrosynomics/beacon-framework.md`](../macrosynomics/beacon-framework.md).
 
 ---
 
@@ -120,7 +118,7 @@ The lock window is bounded (≤3 hours). Operationally, some deployments may cho
 The daily lock window serves critical functions:
 
 1. **Allocation accuracy** — Capacity allocation relies on known queue quantities; if users could mutate the queue during processing, allocations would be invalidated
-2. **Settlement certainty** — The settlement beacon needs fixed quantities to calculate proportional distributions
+2. **Settlement certainty** — The LPHA beacon needs fixed quantities to calculate proportional distributions
 3. **Accounting integrity** — Blocking deposits/withdrawals/claims eliminates race conditions around share ratios and reward accounting
 
 ---
@@ -155,7 +153,7 @@ Settlement:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│             LCTS-pBEAM (held by relay beacon)                    │
+│                   LCTS-pBEAM (LPHA beacon)                       │
 │         Determines capacity each epoch, calls lock/settle        │
 └─────────────────────────────┬───────────────────────────────────┘
                               │
@@ -194,8 +192,8 @@ Settlement:
 | **Net Flow Netting** | Subscribe and redeem queues canceling each other out, reducing net conversion needs |
 | **rewardPerToken** | Cumulative rewards distributed per share (accumulator pattern) |
 | **rewardDebt** | Snapshot of rewardPerToken at time of user's entry (prevents claiming pre-entry rewards) |
-| **LCTS-pBEAM** | pBEAM (Process BEAM) permission token held by an authorized relay-beacon operator that can call lock/settle |
-| **lcts-{halo}** | Operational identifier for the relay beacon (class `relay`) that holds the LCTS-pBEAM. `lcts-{halo}` is the beacon; LCTS-pBEAM is the permission it holds. See [`../macrosynomics/beacon-framework.md`](../macrosynomics/beacon-framework.md) for the beacon taxonomy |
+| **LCTS-pBEAM** | pBEAM (Process BEAM) permission token held by an authorized LPHA beacon operator that can call lock/settle |
+| **lpha-lcts** | The LPHA (Low-Power High-Authority) beacon operator that holds the LCTS-pBEAM. lpha-lcts is the beacon; LCTS-pBEAM is the permission it holds. See `synomics/macrosynomics/beacon-framework.md` for the beacon taxonomy |
 | **Holding System** | Contract holding sUSDS backing srUSDS; receives funding, sources redemptions |
 
 ---
@@ -291,7 +289,7 @@ Each user has one position per queue:
 
 **Preconditions:**
 
-- Caller is the LCTS-pBEAM (held by an authorized relay-beacon operator)
+- Caller is the LCTS-pBEAM (held by an authorized LPHA beacon operator)
 - Called at the configured lock time (daily target: 13:00 UTC)
 
 **Behavior:**
@@ -446,7 +444,7 @@ On settlement, srUSDS is burned and sUSDS is transferred from the Holding System
 
 1. User subscribes 1,000 sUSDS
    - First in generation: 1,000 shares
-2. lcts-{halo} settles with capacity = 1,000 (full conversion)
+2. lpha-lcts settles with capacity = 1,000 (full conversion)
    - 1,000 sUSDS converts to (e.g.) 980 srUSDS
    - rewardPerToken = 0.98e18
    - totalUnderlying = 0 → FINALIZED → queue becomes DORMANT
@@ -525,7 +523,7 @@ Throughout: the generation is LOCKED during the daily lock window, and ACTIVE ou
 
 ### Zero Capacity Epoch
 
-**Scenario:** lcts-{halo} sets capacity to 0 for an epoch.
+**Scenario:** lpha-lcts sets capacity to 0 for an epoch.
 
 - No conversion occurs; rewardPerToken unchanged.
 - At settlement, the generation unlocks back to ACTIVE.
@@ -542,7 +540,7 @@ Throughout: the generation is LOCKED during the daily lock window, and ACTIVE ou
 **Scenario:** User needs funds during LOCKED.
 
 - Withdrawals/exits are blocked until after settlement/unlock.
-- Lock period is bounded (≤3 hours on the daily schedule).
+- Lock duration is bounded (≤3 hours on the daily schedule).
 
 ### Multiple Locked Generations
 
@@ -562,11 +560,11 @@ Throughout: the generation is LOCKED during the daily lock window, and ACTIVE ou
 
 ---
 
-## LCTS-pBEAM (High-Authority Action Beacon) Integration
+## LCTS-pBEAM (LPHA Beacon) Integration
 
 ### Interface
 
-The LCTS-pBEAM (held by the `lcts-{halo}` beacon) calls:
+The LCTS-pBEAM (held by the `lpha-lcts` beacon) calls:
 
 - `SubscribeQueue.lock()`
 - `RedeemQueue.lock()`
@@ -582,7 +580,7 @@ The LCTS-pBEAM (held by the `lcts-{halo}` beacon) calls:
 
 ### Capacity Determination (srUSDS)
 
-The `lcts-{halo}` beacon determines capacity based on:
+The `lpha-lcts` beacon determines capacity based on:
 
 1. Net flow netting
 2. OSRC allocation (governance-originated pre-auction; auction results once auctions are live)
@@ -592,7 +590,7 @@ The `lcts-{halo}` beacon determines capacity based on:
 
 ### Target Spread Mechanism (srUSDS)
 
-srUSDS has a governance-set **target spread** above SSR. The `lcts-{halo}` beacon enforces this:
+srUSDS has a governance-set **target spread** above SSR. The `lpha-lcts` beacon enforces this:
 
 - If OSRC clearing yield (governance-set pre-auction; auction-cleared later) provides yield ≥ target spread: allow full subscribe capacity
 - If demand would result in yield < target spread: reduce subscribe capacity to maintain spread
@@ -684,5 +682,5 @@ These are implementation choices that do not change the business requirements.
 | [`risk-framework/capital-formula.md`](../risk-framework/capital-formula.md) | srUSDS, TEJRC, TISRC as risk capital instruments in the capital formula |
 | [`risk-framework/operational-risk-capital.md`](../risk-framework/operational-risk-capital.md) | ORC sizing linked to LCTS settlement cadence |
 | [`smart-contracts/fixed-rates.md`](fixed-rates.md) | Fixed-rate yield splitting — requires LCTS exchange rate interface |
-| [`../synomic-entities/halo-portfolio.md`](../synomic-entities/halo-portfolio.md) | Portfolio Halos use LCTS as their token standard |
-| [`../roadmap/roadmap-ideas.md`](../roadmap/roadmap-ideas.md) | Phase progression context — LCTS scheduled for a later phase (current Phase 1 spec at [`../roadmap/phase-1-spaces.md`](../roadmap/phase-1-spaces.md)) |
+| [`sky-agents/halo-agents/portfolio-halo.md`](../sky-agents/halo-agents/portfolio-halo.md) | Portfolio Halos use LCTS as their token standard |
+| [`roadmap/roadmap-overview.md`](../roadmap/roadmap-overview.md) | LCTS launches in Phase 4 |

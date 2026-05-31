@@ -7,62 +7,54 @@ Technical documentation for Sky Ecosystem and the Laniakea upgrade — a compreh
 Laniakea is Sky's infrastructure for **automated capital deployment at scale**. It introduces:
 
 - **Unified capital flow architecture** — Capital flows from Sky Core → Primes → Halos → end investments, with every flow rate-limited
-- **Scientific risk management** — Basel III-inspired framework determining capital requirements based on asset duration and forced realization probability
+- **Scientific risk management** — Basel III-inspired framework determining capital requirements based on asset maturity / SPTP and forced realization probability
 - **Autonomous operation** — Sentinel network operates infrastructure within governance-defined bounds, enabling 99% automation
 - **Daily settlement cycles** — Standardized daily cycles for auctions, distributions, and LCTS token settlement (lock 13:00 UTC, settle by 16:00 UTC)
 
-This repository provides a complete view of all future Laniakea upgrades alongside current Sky Ecosystem parameters and features.
+## Repo Layout
 
-## Using This Repository
+This repo is currently focused on **synomics** — the study of the Synome and the entities that inhabit it — together with the risk framework and the Noemar runtime that underlies it. Synomics is the data-and-AI-governance layer of the Laniakea program. The complete earlier-phase baseline (the former repository root — whitepaper, sky-agents, trading, synomics, governance-transition, skychain, input-documents, forecast model, and pre-synlang versions of the shared dirs) is preserved as a verbatim snapshot in `inactive/pre-synlang/` while the active synomics-native rewrite proceeds.
 
-This documentation is designed for navigation with **code LLMs** (Claude Code, Cursor, etc.). The information density and cross-references between documents make AI assistance valuable for efficiently traversing the content.
-
-**Getting started:**
-- Read the whitepaper for the narrative overview
-- Explore specific directories for technical depth
-- Use your AI assistant to search across documents and trace concepts
-
-## Contents
+### Active
 
 | Directory | Description |
 |---|---|
-| [`whitepaper/`](whitepaper/) | Public-facing narrative — main 8-part whitepaper plus appendices (glossary, tokens, design rationale, infrastructure) |
-| [`risk-framework/`](risk-framework/) | Basel III-inspired capital requirements — duration model, asset classification, capital formulas, sentinel integration |
-| [`accounting/`](accounting/) | Settlement operations — daily settlement cycle, auctions, tug-of-war allocation, capital recognition |
-| [`smart-contracts/`](smart-contracts/) | On-chain architecture — PAU pattern (Controller + ALMProxy + RateLimits), Diamond proxy, LCTS, NFATS, rate limits |
-| [`roadmap/`](roadmap/) | Implementation phases 0–10 — from MVP beacons through factory stack to full sentinel automation |
-| [`sky-agents/`](sky-agents/) | Synomic Agent specifications — Generators, Primes, Halos, Guardians, plus creation and restructuring mechanics |
-| [`trading/`](trading/) | Sentinel network and Sky Intents — real-time execution infrastructure and intent-based trading protocol |
-| [`synomics/`](synomics/) | The Synome and the entities that inhabit it — macrosynomics, synodoxics, neurosymbolic, synoteleonomics, the Hearth, core concepts |
-| [`governance-transition/`](governance-transition/) | Alignment conserver consolidation — three legacy roles merged into single Guardian role with collateral backing |
-| [`growth-staking/`](growth-staking/) | Growth Staking — SKY staker incentives tied to ecosystem growth asset holdings (Agent governance tokens and Prime junior risk capital / TEJRC) |
-| [`skychain/`](skychain/) | Skychain research — proposed AI-native EVM blockchain optimized for agent operation |
-| [`input-documents/`](input-documents/) | Community contributions — submit PRs with corrections, suggestions, questions, or new information |
+| [`core-concepts/`](core-concepts/) | Atomic concept definitions shared across the synomics narrative directories — also hosts the synomics overview |
+| [`macrosynomics/`](macrosynomics/) | System-level structure — layers, entities, beacons, governance (the deontic skeleton); meta-architectural layering |
+| [`synodoxics/`](synodoxics/) | Knowledge dynamics — probabilistic mesh, retrieval policy, security model, Noemar substrate (artifact tiers + telseed bootstrap) |
+| [`neurosymbolic/`](neurosymbolic/) | Practical cognition — live graph context, context manipulation, attention allocation, hardware-aware cognition |
+| [`synoteleonomics/`](synoteleonomics/) | Individual teleonomes — what they are, economics, memory, resilience, binding, autonomy paths, recipe marketplace |
+| [`noemar-synlang/`](noemar-synlang/) | Noemar runtime + synlang technical reference — language reference, topology, runtime architecture, boot model, scaling, code patterns |
+| [`risk-framework/`](risk-framework/) | Capital framework — SDR model, asset classification, capital formulas, sentinel integration |
+| [`accounting/`](accounting/) | Funding side — settlement cycle, capital stack (JRC/EJRC/SRC/MDC, ingression, Genesis Capital), isolated deployment, SDR auction, legacy transition |
+| [`smart-contracts/`](smart-contracts/) | On-chain contract architecture — PAU pattern, Configurator Unit, LCTS, NFATS, Diamond PAU, Yield Splitter, rate-limit attack analysis |
+| [`sentinel/`](sentinel/) | Sentinel Network — Baseline / Stream / Warden / Principal formations; TTS-priced ORC; Streaming Accord (absorbed former `trading/`) |
+| [`synomic-entities/`](synomic-entities/) | Per-type operational specs — Prime, Generator, Guardian (Ozone), Core Entity, Oracle / Sequencer / Pylon Entities, Folio, Halo (Portfolio / Term / Trading / Identity Network) |
+| [`growth-staking/`](growth-staking/) | Growth Staking — GF tiers, Reference Valuation (global P/E model), stUSDS borrow surface, Folio integration, agent-internal staking |
+| [`governance/`](governance/) | Practical voting and ratification — Core Council elections, SpellGuard, voting mechanics |
+| [`roadmap/`](roadmap/) | Phase-specific reality — Phase 1 spaces, short-term actuators, v1 test example, ASC transition, vocabulary and conventions |
 
-## Key Documents
+### Inactive
 
-| Document | Description |
+| Directory | Description |
 |---|---|
-| [`whitepaper/sky-whitepaper.md`](whitepaper/sky-whitepaper.md) | Main whitepaper — business model, tokens, agents, risk, governance |
-| [`whitepaper/appendix-f-glossary.md`](whitepaper/appendix-f-glossary.md) | Term definitions |
-| [`smart-contracts/architecture-overview.md`](smart-contracts/architecture-overview.md) | Four-layer capital flow architecture and PAU pattern |
-| [`synomics/macrosynomics/beacon-framework.md`](synomics/macrosynomics/beacon-framework.md) | Beacon taxonomy — power x authority matrix (LPLA/LPHA/HPLA/HPHA) |
-| [`roadmap/roadmap-overview.md`](roadmap/roadmap-overview.md) | Master roadmap with phase summaries, dependencies, and milestones |
+| [`inactive/pre-synlang/`](inactive/pre-synlang/) | The complete prior-baseline root, preserved verbatim as a snapshot: whitepaper, sky-agents, trading, synomics, governance-transition, skychain, input-documents, forecast_model, and the pre-synlang versions of accounting/risk-framework/roadmap/smart-contracts/growth-staking. Being progressively rewritten synlang-native — active specs live at the corresponding top-level dirs. Includes the old root `README.md` for context. |
+| [`inactive/archive/`](inactive/archive/) | Source material for the synomics rewrite (lift, lift-weakness, prior synomics summaries) |
 
-## Contributing
+## Using This Repository
 
-This repository is public to invite contributions from Sky Ecosystem community members.
+This documentation is designed for navigation with **code LLMs** (Claude Code, Cursor, etc.). The entry point is [`summaries/`](summaries/) — read [`summaries/README.md`](summaries/README.md) first; it explains the three-layer structure (root README → summaries → detail files) and lists all 14 directory summaries to load as default context.
 
-**How to contribute:**
-1. Create a pull request adding a new file to the `input-documents/` directory
-2. Your input document can contain: corrections, new information, opinions, context, questions, or suggestions
-3. Contributors with write access will review and merge relevant content into the core documentation
+Direct pointers for specific orientations:
+- Architecture-first: [`macrosynomics/synome-overview.md`](macrosynomics/synome-overview.md)
+- Purpose-first: [`core-concepts/telos-point.md`](core-concepts/telos-point.md)
+- Beacons: [`macrosynomics/beacon-framework.md`](macrosynomics/beacon-framework.md)
 
-See `input-documents/README.md` for guidelines.
+Per-directory `README.md` files intentionally do not exist — the summaries serve that function.
 
 ## Status
 
-These documents are drafts under active development. Content may change as the protocol evolves.
+These documents are drafts under active development. The corpus is in a synlang-native rewrite; content may change as the protocol evolves.
 
 ## Links
 

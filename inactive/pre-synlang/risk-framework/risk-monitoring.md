@@ -10,7 +10,7 @@
 Monitoring provides early warning, situational awareness, and accountability. This document defines the metric categories, stress testing approaches, anomaly detection, and escalation procedures that complement the quantitative risk framework.
 
 For which beacons compute which metrics, see `sentinel-integration.md`.
-For Prime operating-setup architecture (baseline-relay + warden-relay + stream-sentinel), see `sentinel/sentinel-network.md`.
+For sentinel formation architecture, see `trading/sentinel-network.md`.
 
 ---
 
@@ -28,7 +28,7 @@ Fundamental measure of system health. Must remain well above 100%.
 Distribution across quality tiers. Higher Tier 1 concentration = more robust.
 
 **Surplus Buffer**
-Accumulated surplus available to absorb losses before affecting USDS holders. The TMF targets Aggregate Backstop Capital at 1.5% of total USDS supply post-Genesis (see [Treasury Management](../accounting/treasury-management.md)). During the Genesis phase, the interim target is $125M.
+Accumulated surplus available to absorb losses before affecting USDS holders. The TMF targets Aggregate Backstop Capital at 1.5% of total USDS supply post-Genesis (see [Appendix C](../whitepaper/appendix-c-treasury-management-function.md)). During the Genesis phase, the interim target is $125M.
 
 ### Liquidity Metrics
 
@@ -74,29 +74,13 @@ Operational keepers performing their functions.
 **Oracle Freshness**
 Price feeds current and accurate.
 
-### Sub-book and Equity Metrics
-
-**Per-sub-book CRR**
-CRR aggregated by sub-book within each Primebook (`ascbook`, `tradingbook`, `termbook`, `structbook`, `hedgebook`, unmatched). Surfaces:
-- Concentration shifts (e.g., `tradingbook` growing as a fraction of total)
-- Matched-portion erosion (e.g., `structbook` matched-portion shrinking due to bucket capacity changes)
-- Hedge effectiveness drift (e.g., `hedgebook` residual rising as basis loosens)
-
-See [`primebook-composition.md`](primebook-composition.md) for the sub-book taxonomy.
-
-**Equity proximity**
-Distance to equity-tranche zero per book, per [`book-primitive.md`](book-primitive.md). Real-time alerting when any book (Riskbook, Halobook, Primebook, Genbook, Exobook) has equity approaching zero — the unwind trigger. Each book class must have a documented equity-feed mechanism (chain-read primitive / attest-data beacon / synserv computation).
-
-**Treatment-switch frequency**
-Rate of sub-book reclassifications per Prime per epoch. Sudden spikes may indicate gaming attempts (especially mid-stress); the crash-oracle (Phase 2+, per [`primebook-composition.md`](primebook-composition.md) §7) suspends switches during declared crash windows.
-
 ---
 
 ## Monitoring Infrastructure
 
 | Layer | Components |
 |-------|-----------|
-| **Collection** | On-chain state (chain-read primitive), market-memory reducer outputs, attest-data beacons, sentinel reports |
+| **Collection** | On-chain state, oracle data, external market data, sentinel reports |
 | **Processing** | Real-time aggregation, historical comparison, anomaly detection, alert generation |
 | **Visualization** | Role-specific dashboards, real-time status, historical trends, drill-down |
 | **Alerting** | Threshold-based, anomaly-based, escalation triggers |
@@ -162,8 +146,8 @@ Not all risks surface as threshold breaches.
 
 ### Escalation Path
 
-1. Automated detection (synserv verification, warden-relays)
-2. Operating-setup review (baseline-relay + warden-relay + stream-sentinel operators)
+1. Automated detection (lpla-checker, warden sentinels)
+2. Sentinel formation review
 3. Human operator notification (if needed)
 4. Governance notification (if needed)
 5. Emergency powers (if needed)
@@ -191,7 +175,7 @@ The target encumbrance ratio is ≤90% (TRRC / TRC). Agents exceeding this thres
 - **Rate limit reduction** — automatic scaling of PAU rate limits proportional to overshoot
 - **New deployment freeze** — no new positions until ratio returns below threshold
 - **Mandatory deleveraging timeline** — escalating timeline to restore compliance (e.g., 7 days for minor breach, 48 hours for severe)
-- **Governance notification** — automatic escalation via synserv verification alerts
+- **Governance notification** — automatic escalation via lpla-checker alerts
 
 The enforcement mechanism should be calibrated to avoid pro-cyclical forced selling while maintaining capital discipline.
 
@@ -205,4 +189,4 @@ The enforcement mechanism should be calibrated to avoid pro-cyclical forced sell
 | `capital-formula.md` | Capital requirements that monitoring tracks |
 | `correlation-framework.md` | Category caps feeding concentration metrics |
 | `operational-risk-capital.md` | ORC and TTS — warden monitoring economics |
-| `sentinel/sentinel-network.md` | Prime operating-setup architecture (baseline-relay + warden-relay + stream-sentinel) |
+| `trading/sentinel-network.md` | Sentinel formation architecture |

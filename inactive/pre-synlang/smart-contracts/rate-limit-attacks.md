@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-This document analyzes two categories of attacks that constrain the choice of Initial Rate Limit (IRL) and Second-Order Rate Limit (SORL) parameters. Both attacks require a compromised Guardian (relayer key + cBEAM), but differ in profitability and mechanism.
+This document analyzes two categories of attacks that constrain the choice of Initial Rate Limit (IRL) and Second-Order Rate Limit (SORL) parameters. Both attacks require a compromised executor (relayer key + cBEAM), but differ in profitability and mechanism.
 
 The key insight is that IRL and SORL are not independent choices—they are constrained by a bootstrap target (e.g., reach 100M/day within 30 days). Higher SORL allows lower IRL and vice versa. The optimization finds the combination that minimizes total weighted harm from both attack types.
 
@@ -104,13 +104,13 @@ T+24h:   Freeze activates
 |-----------|-------|-------------|
 | Target Rate Limit | 100M/day | Steady-state operational rate limit |
 | Bootstrap Time | 30 days | Time to reach target from IRL |
-| Time to Shutdown (TTS) | 24 hours | Detection → full shutdown |
+| Time to Freeze (TTF) | 24 hours | Detection → full shutdown (TTS from Phase 2+) |
 | SORL Hop (`hop`) | 18 hours | **Onchain** cooldown between increases |
 | Peacetime SORL cadence | Once per 24h | **Policy**: how often we exercise SORL in normal ops |
 | SORL Cycles in Bootstrap | 30 | One per day for 30 days (peacetime cadence) |
 | Damage Rate | 1% | Loss per Type 2 cycle |
 | Extraction Rate | 10% | Attacker profit share (Type 2) |
-| Type 2 Cycles per TTS | 2 | Round-trips possible in 24h |
+| Type 2 Cycles per TTF | 2 | Round-trips possible in 24h |
 
 ### Calibrated Multipliers
 
@@ -178,7 +178,7 @@ IRL = 100M / (1 + SORL)^30
 
 **The tradeoff:**
 - Higher SORL → Lower IRL → Less Type 1 exposure
-- Higher SORL → More marginal headroom per TTS → More Type 2 marginal exposure
+- Higher SORL → More marginal headroom per TTF → More Type 2 marginal exposure
 
 ---
 
@@ -190,7 +190,7 @@ IRL = 100M / (1 + SORL)^30
 
 **Optimizing:**
 - Type 1: Full IRL exposure (initialization theft)
-- Type 2: **Marginal** SORL exposure (additional damage from SORL increase within TTS)
+- Type 2: **Marginal** SORL exposure (additional damage from SORL increase within TTF)
 
 ### Type 1 Harm Formula
 
@@ -211,11 +211,11 @@ Type 2 Marginal Harm = Base × Headroom × Damage_Rate × Cycles × N₂
 
 Where:
 - Base = 100M (target rate limit)
-- Headroom = average marginal increase within `TTS=24h`
+- Headroom = average marginal increase within `TTF=24h`
   - With `hop=18h` and attacker increasing at `t=0` and `t=18h`:  
     `Headroom = 0.75×SORL + 0.25×((1+SORL)^2 - 1) = 1.25×SORL + 0.25×SORL^2`
 - Damage_Rate = 1%
-- Cycles = 2 (per TTS)
+- Cycles = 2 (per TTF)
 - N₂ = 3 × N₁ (surface ratio)
 
 Simplified:
@@ -224,7 +224,7 @@ Type 2 Marginal Harm = 100M × (1.25×SORL + 0.25×SORL^2) × 0.02 × 3 × N₁
                      = 6M × (1.25×SORL + 0.25×SORL^2) × N₁
 ```
 
-**Note:** If the attacker cannot use the second bump within `TTS` (cooldown not available), approximate `Headroom ≈ SORL`.
+**Note:** If the attacker cannot use the second bump within `TTF` (cooldown not available), approximate `Headroom ≈ SORL`.
 
 ### Total Harm
 
@@ -345,7 +345,7 @@ Guardian should hold operational risk capital covering worst-case loss:
 ```
 ORC ≥ Type 1 Max Loss × N₁
     = $100K × 1.0625 × 10
-    = ~$1.06M per Guardian (for N₁ = 10)
+    = ~$1.06M per executor (for N₁ = 10)
 ```
 
 ---
@@ -358,8 +358,8 @@ ORC ≥ Type 1 Max Loss × N₁
 | Type 1 | Lower IRL | Reduces max loss |
 | Type 2 | Lower SORL | Slows ramp to dangerous marginal exposure |
 | Type 2 | Rate limit caps in governance | Hard ceiling on exposure |
-| Both | Faster TTS (better monitoring) | Reduces window |
-| Both | Higher ORC requirements | Ensures Guardian skin in game |
+| Both | Faster TTF (better monitoring) | Reduces window |
+| Both | Higher ORC requirements | Ensures executor skin in game |
 
 **Priority mitigation:** Make slippage limit configuration atomic with vault onboarding. This eliminates Type 1 entirely, allowing the model to optimize purely for Type 2 (which would suggest lower SORL, higher IRL under the same bootstrap constraint).
 

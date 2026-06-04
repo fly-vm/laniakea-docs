@@ -100,7 +100,7 @@ Future use cases the same mechanism supports:
 - What-if queries (synodoxics arguments exercised in isolated frames before becoming endospells)
 - Major migrations / repartitioning (double-mesh trick)
 
-Phase 1 implementation: deep copy is enough at this scale (~92 fixed synart Spaces, plus modest constructor-made state). Copy-on-write becomes valuable later.
+Phase 1 implementation: deep copy is enough at the P1 fixed-topology scale (plus modest constructor-made state). Copy-on-write becomes valuable later.
 
 ---
 
@@ -199,10 +199,8 @@ The synome only knows the daily synomic settlement cycle (DSC). Legacy monthly s
 
 P1 uses DSC for structural-demand processing:
 
-- cut: 13:00 UTC;
-- processing window: 13:00-16:00 UTC;
+- a daily cut, then a processing window, then settle / epoch advance (exact times are an as-built parameter — see `accounting/settlement-cycle.md`);
 - processing tasks: treasury refresh, lot-age surface refresh, Lindy SDR, SDR policy overlay, temporary SDR auction;
-- settle / epoch advance: 16:00 UTC;
 - advancement: synserv derives state from wall clock and writes `&core.settlement`, not a sudo loop.
 
 Later settlement closure, TMF, DR/SDRR, and real auctions add more processing tasks to the same cadence.

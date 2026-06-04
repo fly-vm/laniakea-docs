@@ -1,68 +1,21 @@
 # Capital Formula — P1 Lean
 
-Lean P1 view of [`../risk-framework/capital-formula.md`](../risk-framework/capital-formula.md). Canonical full body there; this file carries only what P1 binds to.
+Lean P1 view of [`../risk-framework/capital-formula.md`](../risk-framework/capital-formula.md) (canonical full body, including the deferred sub-book formulas). P1 has one active sub-book, `structbook`.
 
-P1 has one active sub-book (`structbook`); deferred sub-book formulas (ascbook, tradingbook, termbook, hedgebook, unmatched-leftover) live in the canonical.
+**Per position:** risk-form match (else CRR 100% default-deny) → project asset stress through structure → route (P1: always `structbook`) → sub-book capital math → concentration excess (computed, enforcement deferred) → `position_capital = sub-book formula × position size`.
 
-## 1. Per-position computation flow
-
-```
-Step 1: Riskbook risk-form match
-  → If matched: equation produces per-position CRR components
-  → If no match: CRR = 100% (default-deny)
-
-Step 2: Project asset stress through structure
-  → Tranched-exobook: waterfall propagation (see custodial-crypto-risk-form.md §3)
-
-Step 3: Halobook exposure structure adjustment
-  → Apply rollover, lockup, embedded-option effects → U/P/T declarations
-
-Step 4: Sub-book routing
-  → P1: always structbook (others are deferred schema slots)
-
-Step 5: Sub-book capital math (see §2 below)
-
-Step 6: Concentration excess (computed, deferred enforcement in P1)
-  → 100% CRR on over-cap portion when activated
-
-Step 7: Position capital = sum × position size
-```
-
-## 2. `structbook` formula (the only P1-active sub-book)
+**`structbook` formula:**
 
 ```
-Matched Portion   = min(Position Size, Available Structural-Demand Capacity)
-Unmatched Portion = Position Size - Matched Portion
-Forced-Loss Capital = spread-CRR + liquidity-CRR
+matched   = min(position_size, available SDR capacity at required-or-higher bucket)
+unmatched = position_size − matched
+forced-loss-capital = spread-CRR + liquidity-CRR
 
-Position Capital = Matched   × default-CRR
-                 + Unmatched × max(default-CRR, Forced-Loss Capital)
-                 + Unmatched × rate-CRR
+position_capital = matched   × default-CRR
+                 + unmatched × max(default-CRR, forced-loss-capital)
+                 + unmatched × rate-CRR
 ```
 
-Spread, rate, and liquidity are covered on the SDR-matched portion in P1 (risk form still calculates them; they become non-binding only to the extent matched). **default-CRR is always required.** Missing SDR allocation is treated as zero available capacity, so the position remains in `structbook` and capitalizes as fully unmatched.
+SDR matching makes spread/rate/liquidity non-binding for the matched portion; **default-CRR is always required.** Missing SDR allocation = zero capacity → fully unmatched.
 
-See [`matching.md`](matching.md) §3 for the cumulative capacity matching that determines available capacity.
-
-## 3. Concentration excess (P1: computed, not enforced)
-
-Mechanism deferred to Phase 3+. When activated:
-
-```
-excess[p][c] = max(0, exposure[p][c] - cap_allocation[p][c])
-Excess Capital[p][c] = excess[p][c] × 1.0   ; 100% CRR
-```
-
-No-stacking rule: max binding category penalty, not the sum.
-
-## 4. TRRC aggregation
-
-```
-insynTRRC[p] = Σ Position Capital[position] + Σ Excess Capital (deferred in P1)
-TRRC[p]      = insynTRRC[p] + exsynTRRC[p]    ; exsyn from patch-{prime} writing into primebook
-ER[p]        = TRRC[p] / TRC[p]               ; target ≤ 0.90
-```
-
-`TRC[p]` = Total Risk Capital held (IJRC + EJRC + SRC tiers; tier mechanics deferred-out-of-P1 in the canonical, but the TRC scalar is governance-set in `&entity.prime.{id}.root` for P1).
-
-P1 ER emission cadence: per heartbeat, via `(prime-er $prime $value $T)` written by synserv into the primebook.
+**Aggregation:** `insynTRRC = Σ position_capital + concentration excess (deferred)`; `TRRC = insynTRRC + exsynTRRC` (exsyn from `patch-{prime}`); `ER = TRRC / TRC`, governance-capped below 1. `TRC` is the governance-set scalar in the Prime root (tier mechanics deferred — see [`../accounting/capital-stack.md`](../accounting/capital-stack.md)). ER is emitted per heartbeat.

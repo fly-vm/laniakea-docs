@@ -36,14 +36,14 @@ The roadmap dir carries **lean P1-scoped versions** of four risk-framework files
 | `big-picture.md` | 5-layer arch, beacon taxonomy, smart contracts (PAU/Configurator/LCTS/NFATS), Noemar substrate, governance, accounting/DSC, phase ladder |
 | `risk-framework.md` | 5 risk types, book primitive, tranching + waterfall, currency frame, sub-book taxonomy, default-deny, capital formula, custodial-crypto form body, SDR model, asset risk-type tuple |
 | `../roadmap/phase-1-overview.md` | Fronts orientation (structural + operator) above the canonical Space spec |
-| `../roadmap/phase-1-spaces.md` | Canonical Phase 1 synart: 92 fixed Spaces (78 base topology + 14 workspec Spaces), halo class/risk class, constructors, beacons, verbs, ER data flow, genesis sudo sequence, worked NFAT example, P1 carve-outs |
+| `../roadmap/phase-1-spaces.md` | Durable Phase 1 synart **shape**: Space categories, halo class/risk class decoupling, constructors, attestation model, ER rollup path, genesis/phase-boundary discipline, carve-outs |
 | `../roadmap/phase-1-principles.md` | 17 invariants distilled from P1 design |
 | `../roadmap/synlang-p1-form.md` | Minimal executable rule / loop / risk-form shapes needed by Localnome 1 and the custodial-crypto risk body |
 | `../roadmap/attestor-atom-schema.md` | Borrower readiness/admission + riskbook/exobook attestation schemas, ready-empty/funded-active lifecycle, default-deny gate, slashing surface |
 | `../roadmap/custodial-crypto-risk-form.md` | **Lean** — P1 binding risk-form body: composition scope, exobook waterfall, CRR component outputs, riskbook aggregation, structbook consumption |
 | `../roadmap/matching.md` | **Lean** — smooth blend formula, cumulative capacity matching, P1 SDR allocation source, termbook-vs-structbook |
-| `../roadmap/capital-formula.md` | **Lean** — per-position flow, structbook formula (only P1-active), TRRC aggregation, ER target |
-| `../roadmap/market-memory-oracle.md` | **Lean** — reducer concept, P1 output families catalog, scenario interface |
+| `../roadmap/capital-formula.md` | **Lean** — per-position flow, structbook formula (only P1-active), TRRC aggregation, ER |
+| `../roadmap/market-memory-oracle.md` | **Lean** — memory-system pattern, reducer versioning, output families, quality states, scenario discipline |
 | `../roadmap/roadmap-ideas.md` | Sudo staircase, frame mechanism, lift principle and its sub-patterns (code/data, insyn/exsyn, black-box, temporary-equation, phase-invariant), DSC, market-memory, don't-rabbit-hole |
 | `../roadmap/grounding-and-workcells.md` | P1 grounded execution stack: literals, special forms, stdlib, speciallib, workcell-backed sigils, bindings, implements, implement code blobs, workcells, installer, `&core.bootstrap` |
 | `../roadmap/noemar-synlib-telseed.md` | Provisional boundary principles for keeping Noemar minimal while synlib carries governance-maintained defaults and telseeds carry birth/install packages |
@@ -53,5 +53,5 @@ The roadmap dir carries **lean P1-scoped versions** of four risk-framework files
 | `../roadmap/localnome.md` | Build ladder from single-runtime callable tests to full local P1; intentionally narrative until Noemar has a real ingestion format |
 | `../roadmap/localnome-containers.md` | Container and external-world isolation doctrine; phases one-localtel-per-container into Localnome and defers telseed package shape until Localnome has produced evidence |
 | `../roadmap/testosynome-scenarios.md` | Scenario coverage matrix and P1 activation rehearsal suite |
-| `../roadmap/p1-nfat-atom-trace.md` | Atom-level NFAT trace: constructor writes, attestor gates, risk-form execution, structbook matching, TRRC / ER rollup |
-| `../roadmap/p1-borrower-nfat-user-scenario.md` | User/operator scenario: borrower readiness → Core inclusion → ready-empty books → queue claim / NFAT mint → disbursement → zero-SDR ER update |
+| `../roadmap/p1-nfat-atom-trace.md` | Atom-level read/write **shape** per rollup stage + default-deny branches (symbolic, value-free) |
+| `../roadmap/p1-borrower-nfat-user-scenario.md` | Value-free narrative borrower-to-ER path: readiness → admission → ready-empty books → NFAT mint → disbursement → structbook ER update |
